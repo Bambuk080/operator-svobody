@@ -1,10 +1,12 @@
 const CACHE_NAME = "operator-svobody-v1";
 
+const BASE_PATH = "/operator-svobody/";
+
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/icons.svg"
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.webmanifest`,
+  `${BASE_PATH}icons.svg`
 ];
 
 self.addEventListener("install", (event) => {
@@ -39,7 +41,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request).then((cachedResponse) => {
-        return cachedResponse || caches.match("/");
+        return cachedResponse || caches.match(BASE_PATH);
       });
     })
   );

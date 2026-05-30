@@ -11,10 +11,10 @@ createRoot(document.getElementById("root")).render(
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .catch((error) => {
-        console.log("Service Worker registration failed:", error);
-      });
+    const swPath = `${import.meta.env.BASE_URL}sw.js`;
+
+    navigator.serviceWorker.register(swPath).catch((error) => {
+      console.log("Service Worker registration failed:", error);
+    });
   });
 }
