@@ -4,66 +4,16 @@ import "./App.css";
 const categories = ["Религия", "Дисциплина", "Бизнес", "Тело", "Знания"];
 
 const defaultTasks = [
-  {
-    id: "fajr",
-    title: "Фаджр вовремя",
-    category: "Религия",
-    points: 12,
-  },
-  {
-    id: "quran",
-    title: "Коран и азкары утром",
-    category: "Религия",
-    points: 10,
-  },
-  {
-    id: "duha",
-    title: "Духа или религиозный минимум",
-    category: "Религия",
-    points: 6,
-  },
-  {
-    id: "main-task",
-    title: "Главная задача дня выполнена",
-    category: "Дисциплина",
-    points: 15,
-  },
-  {
-    id: "no-youtube-before-main",
-    title: "YouTube не открыт до главной задачи",
-    category: "Дисциплина",
-    points: 10,
-  },
-  {
-    id: "book-before-sleep",
-    title: "Книга 15–20 минут перед сном",
-    category: "Дисциплина",
-    points: 8,
-  },
-  {
-    id: "whatsapp-status",
-    title: "3 WhatsApp-статуса",
-    category: "Бизнес",
-    points: 10,
-  },
-  {
-    id: "wb-step",
-    title: "Мини-шаг по WB / главный товар",
-    category: "Бизнес",
-    points: 10,
-  },
-  {
-    id: "training",
-    title: "Тренировка / активность по графику",
-    category: "Тело",
-    points: 10,
-  },
-  {
-    id: "arabic-learning",
-    title: "Арабский / урок / обучение",
-    category: "Знания",
-    points: 9,
-  },
+  { id: "fajr", title: "Фаджр вовремя", category: "Религия", points: 12 },
+  { id: "quran", title: "Коран и азкары утром", category: "Религия", points: 10 },
+  { id: "duha", title: "Духа или религиозный минимум", category: "Религия", points: 6 },
+  { id: "main-task", title: "Главная задача дня выполнена", category: "Дисциплина", points: 15 },
+  { id: "no-youtube-before-main", title: "YouTube не открыт до главной задачи", category: "Дисциплина", points: 10 },
+  { id: "book-before-sleep", title: "Книга 15–20 минут перед сном", category: "Дисциплина", points: 8 },
+  { id: "whatsapp-status", title: "3 WhatsApp-статуса", category: "Бизнес", points: 10 },
+  { id: "wb-step", title: "Мини-шаг по WB / главный товар", category: "Бизнес", points: 10 },
+  { id: "training", title: "Тренировка / активность по графику", category: "Тело", points: 10 },
+  { id: "arabic-learning", title: "Арабский / урок / обучение", category: "Знания", points: 9 },
 ];
 
 const emptyReport = {
@@ -152,6 +102,8 @@ function getOperatorText(score, done, tasks) {
 function App() {
   const todayKey = getTodayKey();
 
+  const [activeTab, setActiveTab] = useState("today");
+
   const [tasks, setTasks] = useState(() =>
     loadJson("operator-v1-tasks", defaultTasks)
   );
@@ -228,7 +180,7 @@ function App() {
     });
   }, [done, tasks]);
 
-  const lastHistory = history.slice(0, 7);
+  const lastHistory = history.slice(0, 10);
 
   function toggleTask(id) {
     setDoneByDate((prev) => ({
@@ -351,294 +303,356 @@ function App() {
       return [record, ...withoutToday].slice(0, 30);
     });
 
+    setActiveTab("history");
     alert("День сохранён в истории.");
   }
 
   return (
     <main className="app">
-      <section className="panel hero">
-        <div className="header">
+      <div className="shell">
+        <header className="topHeader">
           <div>
             <p className="label">Оператор свободы</p>
             <h1>Панель дня</h1>
-            <p className="subtitle">
-              {getPrettyDate()} · религия · дисциплина · бизнес · тело · знания
-            </p>
+            <p className="subtitle">{getPrettyDate()}</p>
           </div>
 
           <button onClick={resetDay} className="reset">
-            Сброс дня
+            Сброс
           </button>
-        </div>
+        </header>
 
-        <div className="scoreBlock">
-          <div className="circle">
-            <span>{score}</span>
-            <small>/100</small>
-          </div>
+        <nav className="tabBar">
+          <button
+            className={activeTab === "today" ? "active" : ""}
+            onClick={() => setActiveTab("today")}
+          >
+            Сегодня
+          </button>
 
-          <div>
-            <p className={`status ${getStatusClass(score)}`}>{getStatus(score)}</p>
-            <h2>{getOperatorText(score, done, tasks)}</h2>
-            <p className="command">
-              Команда дня: YouTube запрещён до выполнения главной задачи.
-            </p>
-          </div>
-        </div>
+          <button
+            className={activeTab === "report" ? "active" : ""}
+            onClick={() => setActiveTab("report")}
+          >
+            Отчёт
+          </button>
 
-        <div className="progress">
-          <div className="progressFill" style={{ width: `${score}%` }} />
-        </div>
+          <button
+            className={activeTab === "history" ? "active" : ""}
+            onClick={() => setActiveTab("history")}
+          >
+            История
+          </button>
 
-        <p className="miniInfo">
-          Закрыто задач: {completedCount} из {tasks.length}. Набрано:{" "}
-          {earnedPoints} из {totalPoints} баллов.
-        </p>
-      </section>
+          <button
+            className={activeTab === "settings" ? "active" : ""}
+            onClick={() => setActiveTab("settings")}
+          >
+            Настройки
+          </button>
+        </nav>
 
-      <section className="stats">
-        {categoryStats.map((item) => (
-          <div className="statCard" key={item.category}>
-            <div className="statTop">
-              <span>{item.category}</span>
-              <strong>
-                {item.value}/{item.max}
-              </strong>
-            </div>
+        {activeTab === "today" && (
+          <>
+            <section className="panel hero">
+              <div className="scoreBlock">
+                <div className="circle">
+                  <span>{score}</span>
+                  <small>/100</small>
+                </div>
 
-            <div className="smallProgress">
-              <div
-                className="smallProgressFill"
-                style={{ width: `${item.percent}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </section>
+                <div>
+                  <p className={`status ${getStatusClass(score)}`}>
+                    {getStatus(score)}
+                  </p>
+                  <h2>{getOperatorText(score, done, tasks)}</h2>
+                  <p className="command">
+                    Команда дня: YouTube запрещён до выполнения главной задачи.
+                  </p>
+                </div>
+              </div>
 
-      <section className="panel">
-        <div className="sectionHeader">
-          <div>
-            <p className="label">Чеклист</p>
-            <h2>Что закрыть сегодня</h2>
-          </div>
-        </div>
+              <div className="progress">
+                <div className="progressFill" style={{ width: `${score}%` }} />
+              </div>
 
-        <div className="taskList">
-          {tasks.map((task) => (
-            <div key={task.id} className={`taskRow ${done[task.id] ? "done" : ""}`}>
-              <button className="taskCheck" onClick={() => toggleTask(task.id)}>
-                <span>{done[task.id] ? "✓" : ""}</span>
-              </button>
+              <p className="miniInfo">
+                Закрыто задач: {completedCount} из {tasks.length}. Набрано:{" "}
+                {earnedPoints} из {totalPoints} баллов.
+              </p>
+            </section>
 
-              <div className="taskEdit">
+            <section className="stats">
+              {categoryStats.map((item) => (
+                <div className="statCard" key={item.category}>
+                  <div className="statTop">
+                    <span>{item.category}</span>
+                    <strong>
+                      {item.value}/{item.max}
+                    </strong>
+                  </div>
+
+                  <div className="smallProgress">
+                    <div
+                      className="smallProgressFill"
+                      style={{ width: `${item.percent}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </section>
+
+            <section className="panel">
+              <p className="label">Чеклист</p>
+              <h2>Что закрыть сегодня</h2>
+
+              <div className="taskList simple">
+                {tasks.map((task) => (
+                  <button
+                    key={task.id}
+                    className={`taskCard ${done[task.id] ? "done" : ""}`}
+                    onClick={() => toggleTask(task.id)}
+                  >
+                    <span className="checkBox">{done[task.id] ? "✓" : ""}</span>
+
+                    <span>
+                      <strong>{task.title}</strong>
+                      <small>
+                        {task.category} · +{task.points} баллов
+                      </small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel rule">
+              <p className="label">Жёсткое правило</p>
+              <h2>Не уходи в YouTube, когда задача непонятная</h2>
+              <p>
+                Если не знаешь, что делать — разбей задачу на шаг на 10 минут.
+                Свобода строится не мыслями, а закрытыми действиями.
+              </p>
+            </section>
+          </>
+        )}
+
+        {activeTab === "report" && (
+          <section className="panel">
+            <p className="label">Вечерний отчёт</p>
+            <h2>Закрытие дня без самообмана</h2>
+
+            <div className="reportGrid">
+              <label>
+                Энергия 1–10
                 <input
-                  value={task.title}
+                  value={report.energy}
+                  onChange={(event) => updateReport("energy", event.target.value)}
+                  placeholder="Например: 6"
+                />
+              </label>
+
+              <label>
+                Фокус 1–10
+                <input
+                  value={report.focus}
+                  onChange={(event) => updateReport("focus", event.target.value)}
+                  placeholder="Например: 7"
+                />
+              </label>
+
+              <label>
+                YouTube / скроллинг
+                <input
+                  value={report.youtube}
+                  onChange={(event) => updateReport("youtube", event.target.value)}
+                  placeholder="Например: 40 минут"
+                />
+              </label>
+            </div>
+
+            <label className="fullLabel">
+              Что сегодня получилось?
+              <textarea
+                value={report.win}
+                onChange={(event) => updateReport("win", event.target.value)}
+                placeholder="Например: сделал WhatsApp-статусы и не сорвал утро"
+              />
+            </label>
+
+            <label className="fullLabel">
+              Что сорвалось и почему?
+              <textarea
+                value={report.problem}
+                onChange={(event) => updateReport("problem", event.target.value)}
+                placeholder="Пиши честно. Не красиво, а правду."
+              />
+            </label>
+
+            <label className="fullLabel">
+              Что исправить завтра?
+              <textarea
+                value={report.tomorrow}
+                onChange={(event) => updateReport("tomorrow", event.target.value)}
+                placeholder="Один конкретный шаг на завтра"
+              />
+            </label>
+
+            <label className="fullLabel">
+              Заметка дня
+              <textarea
+                value={report.note}
+                onChange={(event) => updateReport("note", event.target.value)}
+                placeholder="Любой вывод, мысль или наблюдение"
+              />
+            </label>
+
+            <button className="closeDay" onClick={closeDay}>
+              Закрыть день и сохранить
+            </button>
+          </section>
+        )}
+
+        {activeTab === "history" && (
+          <section className="panel">
+            <p className="label">История</p>
+            <h2>Последние сохранённые дни</h2>
+
+            {lastHistory.length === 0 ? (
+              <p className="emptyText">
+                Истории пока нет. Заполни вечерний отчёт и нажми “Закрыть день”.
+              </p>
+            ) : (
+              <div className="historyList">
+                {lastHistory.map((item) => (
+                  <div className="historyItem" key={item.date}>
+                    <div>
+                      <strong>{item.prettyDate}</strong>
+                      <small>
+                        {item.completedCount}/{item.totalTasks} задач ·{" "}
+                        {item.earnedPoints}/{item.totalPoints} баллов
+                      </small>
+                    </div>
+
+                    <span className={`historyScore ${getStatusClass(item.score)}`}>
+                      {item.score}/100
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === "settings" && (
+          <>
+            <section className="panel">
+              <p className="label">Настройка</p>
+              <h2>Добавить задачу</h2>
+
+              <form className="taskForm" onSubmit={addTask}>
+                <input
+                  value={newTask.title}
                   onChange={(event) =>
-                    updateTask(task.id, "title", event.target.value)
+                    setNewTask((prev) => ({
+                      ...prev,
+                      title: event.target.value,
+                    }))
+                  }
+                  placeholder="Например: 20 минут арабского"
+                />
+
+                <select
+                  value={newTask.category}
+                  onChange={(event) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      category: event.target.value,
+                    }))
+                  }
+                >
+                  {categories.map((category) => (
+                    <option value={category} key={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={newTask.points}
+                  onChange={(event) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      points: event.target.value,
+                    }))
                   }
                 />
 
-                <div className="taskMeta">
-                  <select
-                    value={task.category}
-                    onChange={(event) =>
-                      updateTask(task.id, "category", event.target.value)
-                    }
-                  >
-                    {categories.map((category) => (
-                      <option value={category} key={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                <button type="submit">Добавить</button>
+              </form>
 
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={task.points}
-                    onChange={(event) =>
-                      updateTask(task.id, "points", event.target.value)
-                    }
-                  />
-
-                  <span>баллов</span>
-                </div>
-              </div>
-
-              <button className="deleteButton" onClick={() => deleteTask(task.id)}>
-                ×
+              <button className="ghostButton" onClick={resetTasksToDefault}>
+                Вернуть стандартные задачи
               </button>
-            </div>
-          ))}
-        </div>
-      </section>
+            </section>
 
-      <section className="panel">
-        <p className="label">Настройка</p>
-        <h2>Добавить задачу</h2>
+            <section className="panel">
+              <p className="label">Редактор задач</p>
+              <h2>Изменить текущий список</h2>
 
-        <form className="taskForm" onSubmit={addTask}>
-          <input
-            value={newTask.title}
-            onChange={(event) =>
-              setNewTask((prev) => ({
-                ...prev,
-                title: event.target.value,
-              }))
-            }
-            placeholder="Например: 20 минут арабского"
-          />
+              <div className="settingsList">
+                {tasks.map((task) => (
+                  <div key={task.id} className="taskRow">
+                    <div className="taskEdit">
+                      <input
+                        value={task.title}
+                        onChange={(event) =>
+                          updateTask(task.id, "title", event.target.value)
+                        }
+                      />
 
-          <select
-            value={newTask.category}
-            onChange={(event) =>
-              setNewTask((prev) => ({
-                ...prev,
-                category: event.target.value,
-              }))
-            }
-          >
-            {categories.map((category) => (
-              <option value={category} key={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+                      <div className="taskMeta">
+                        <select
+                          value={task.category}
+                          onChange={(event) =>
+                            updateTask(task.id, "category", event.target.value)
+                          }
+                        >
+                          {categories.map((category) => (
+                            <option value={category} key={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
 
-          <input
-            type="number"
-            min="1"
-            max="50"
-            value={newTask.points}
-            onChange={(event) =>
-              setNewTask((prev) => ({
-                ...prev,
-                points: event.target.value,
-              }))
-            }
-          />
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={task.points}
+                          onChange={(event) =>
+                            updateTask(task.id, "points", event.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
 
-          <button type="submit">Добавить</button>
-        </form>
-
-        <button className="ghostButton" onClick={resetTasksToDefault}>
-          Вернуть стандартные задачи
-        </button>
-      </section>
-
-      <section className="panel">
-        <p className="label">Вечерний отчёт</p>
-        <h2>Закрытие дня без самообмана</h2>
-
-        <div className="reportGrid">
-          <label>
-            Энергия 1–10
-            <input
-              value={report.energy}
-              onChange={(event) => updateReport("energy", event.target.value)}
-              placeholder="Например: 6"
-            />
-          </label>
-
-          <label>
-            Фокус 1–10
-            <input
-              value={report.focus}
-              onChange={(event) => updateReport("focus", event.target.value)}
-              placeholder="Например: 7"
-            />
-          </label>
-
-          <label>
-            YouTube / скроллинг
-            <input
-              value={report.youtube}
-              onChange={(event) => updateReport("youtube", event.target.value)}
-              placeholder="Например: 40 минут"
-            />
-          </label>
-        </div>
-
-        <label className="fullLabel">
-          Что сегодня получилось?
-          <textarea
-            value={report.win}
-            onChange={(event) => updateReport("win", event.target.value)}
-            placeholder="Например: сделал WhatsApp-статусы и не сорвал утро"
-          />
-        </label>
-
-        <label className="fullLabel">
-          Что сорвалось и почему?
-          <textarea
-            value={report.problem}
-            onChange={(event) => updateReport("problem", event.target.value)}
-            placeholder="Пиши честно. Не красиво, а правду."
-          />
-        </label>
-
-        <label className="fullLabel">
-          Что исправить завтра?
-          <textarea
-            value={report.tomorrow}
-            onChange={(event) => updateReport("tomorrow", event.target.value)}
-            placeholder="Один конкретный шаг на завтра"
-          />
-        </label>
-
-        <label className="fullLabel">
-          Заметка дня
-          <textarea
-            value={report.note}
-            onChange={(event) => updateReport("note", event.target.value)}
-            placeholder="Любой вывод, мысль или наблюдение"
-          />
-        </label>
-
-        <button className="closeDay" onClick={closeDay}>
-          Закрыть день и сохранить в историю
-        </button>
-      </section>
-
-      <section className="panel">
-        <p className="label">История</p>
-        <h2>Последние сохранённые дни</h2>
-
-        {lastHistory.length === 0 ? (
-          <p className="emptyText">
-            Истории пока нет. Заполни вечерний отчёт и нажми “Закрыть день”.
-          </p>
-        ) : (
-          <div className="historyList">
-            {lastHistory.map((item) => (
-              <div className="historyItem" key={item.date}>
-                <div>
-                  <strong>{item.prettyDate}</strong>
-                  <small>
-                    {item.completedCount}/{item.totalTasks} задач ·{" "}
-                    {item.earnedPoints}/{item.totalPoints} баллов
-                  </small>
-                </div>
-
-                <span className={`historyScore ${getStatusClass(item.score)}`}>
-                  {item.score}/100
-                </span>
+                    <button
+                      className="deleteButton"
+                      onClick={() => deleteTask(task.id)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </section>
+          </>
         )}
-      </section>
-
-      <section className="panel rule">
-        <p className="label">Жёсткое правило</p>
-        <h2>Не уходи в YouTube, когда задача непонятная</h2>
-        <p>
-          Если не знаешь, что делать — разбей задачу на шаг на 10 минут.
-          Свобода строится не мыслями, а закрытыми действиями.
-        </p>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 .app {
   min-height: 100vh;
-  padding: 24px;
+  padding: 18px;
+  padding-bottom: 96px;
   color: #f5f7fb;
   background:
     radial-gradient(circle at top left, rgba(90, 255, 190, 0.18), transparent 30%),
@@ -8,10 +9,94 @@
     #07090d;
 }
 
+.shell {
+  width: min(980px, 100%);
+  margin: 0 auto;
+}
+
+.topHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.label {
+  margin: 0 0 8px;
+  color: #8df7c1;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(40px, 8vw, 70px);
+  line-height: 0.88;
+  letter-spacing: -0.07em;
+}
+
+h2 {
+  margin: 0 0 10px;
+  letter-spacing: -0.03em;
+}
+
+.subtitle,
+.command,
+.rule p,
+.miniInfo,
+.emptyText {
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.6;
+}
+
+.reset,
+.closeDay,
+.taskForm button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #07100b;
+  background: #8df7c1;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tabBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(7, 9, 13, 0.72);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tabBar button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 8px;
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tabBar button.active {
+  color: #07100b;
+  background: #8df7c1;
+}
+
 .panel {
-  max-width: 980px;
-  margin: 0 auto 18px;
-  padding: 24px;
+  margin: 0 auto 14px;
+  padding: 20px;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(
@@ -38,71 +123,18 @@
   filter: blur(12px);
 }
 
-.header,
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  position: relative;
-  z-index: 1;
-}
-
-.label {
-  margin: 0 0 8px;
-  color: #8df7c1;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: 0 0 8px;
-  font-size: clamp(42px, 8vw, 72px);
-  line-height: 0.9;
-  letter-spacing: -0.07em;
-}
-
-h2 {
-  margin: 0 0 10px;
-  letter-spacing: -0.03em;
-}
-
-.subtitle,
-.command,
-.rule p,
-.miniInfo,
-.emptyText {
-  color: rgba(255, 255, 255, 0.68);
-  line-height: 1.6;
-}
-
-.reset,
-.taskForm button,
-.closeDay {
-  border: 0;
-  border-radius: 999px;
-  padding: 10px 16px;
-  color: #07100b;
-  background: #8df7c1;
-  font-weight: 900;
-  cursor: pointer;
-}
-
 .scoreBlock {
   display: grid;
-  grid-template-columns: 170px 1fr;
-  gap: 24px;
+  grid-template-columns: 150px 1fr;
+  gap: 22px;
   align-items: center;
-  margin-top: 30px;
   position: relative;
   z-index: 1;
 }
 
 .circle {
-  width: 160px;
-  height: 160px;
+  width: 140px;
+  height: 140px;
   display: grid;
   place-items: center;
   position: relative;
@@ -114,19 +146,20 @@ h2 {
 }
 
 .circle span {
-  font-size: 56px;
+  font-size: 50px;
   font-weight: 1000;
   letter-spacing: -0.08em;
 }
 
 .circle small {
   position: absolute;
-  bottom: 38px;
+  bottom: 34px;
   color: rgba(255, 255, 255, 0.55);
   font-weight: 800;
 }
 
-.status {
+.status,
+.historyScore {
   display: inline-block;
   margin: 0 0 12px;
   padding: 8px 12px;
@@ -161,17 +194,22 @@ h2 {
   background: #ff6b6b;
 }
 
-.progress {
-  height: 16px;
-  margin-top: 28px;
+.progress,
+.smallProgress {
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.09);
+}
+
+.progress {
+  height: 16px;
+  margin-top: 24px;
   position: relative;
   z-index: 1;
 }
 
-.progressFill {
+.progressFill,
+.smallProgressFill {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #8df7c1, #f9cf72);
@@ -186,16 +224,15 @@ h2 {
 }
 
 .stats {
-  max-width: 980px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  margin: 0 auto 18px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .statCard {
-  padding: 16px;
-  border-radius: 22px;
+  padding: 14px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.045);
 }
@@ -204,7 +241,7 @@ h2 {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 13px;
 }
 
@@ -214,132 +251,59 @@ h2 {
 
 .smallProgress {
   height: 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
 }
 
-.smallProgressFill {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #8df7c1, #f9cf72);
-  transition: width 0.45s ease;
-}
-
-.taskList {
+.taskList,
+.settingsList,
+.historyList {
   display: grid;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
-.taskRow {
+.taskCard {
+  width: 100%;
   display: grid;
-  grid-template-columns: 42px 1fr 42px;
-  gap: 10px;
-  align-items: stretch;
-}
-
-.taskCheck,
-.deleteButton {
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  border-radius: 18px;
+  padding: 14px;
   color: #fff;
+  text-align: left;
   background: rgba(255, 255, 255, 0.045);
   cursor: pointer;
 }
 
-.taskCheck span {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  color: #07100b;
-  font-weight: 1000;
-}
-
-.taskRow.done .taskCheck {
-  background: #8df7c1;
-}
-
-.taskEdit {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.taskRow.done .taskEdit {
+.taskCard.done {
   border-color: rgba(141, 247, 193, 0.4);
   background: rgba(141, 247, 193, 0.12);
 }
 
-.taskEdit input,
-.taskEdit select,
-.taskForm input,
-.taskForm select,
-.reportGrid input,
-.fullLabel textarea {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  outline: none;
-  border-radius: 14px;
-  padding: 11px 12px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.taskEdit input {
-  font-weight: 800;
-}
-
-.taskMeta {
+.checkBox {
+  width: 32px;
+  height: 32px;
   display: grid;
-  grid-template-columns: 1fr 80px auto;
-  gap: 8px;
-  align-items: center;
+  place-items: center;
+  border-radius: 10px;
+  color: #07100b;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 1000;
 }
 
-.taskMeta span {
+.taskCard.done .checkBox {
+  background: #8df7c1;
+}
+
+.taskCard strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.taskCard small,
+.historyItem small {
   color: rgba(255, 255, 255, 0.55);
-  font-size: 13px;
-}
-
-select option {
-  color: #111;
-}
-
-.deleteButton {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 24px;
-}
-
-.deleteButton:hover {
-  color: #111;
-  background: #ff6b6b;
-}
-
-.taskForm {
-  display: grid;
-  grid-template-columns: 1fr 170px 100px auto;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.ghostButton {
-  margin-top: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 10px 16px;
-  color: rgba(255, 255, 255, 0.75);
-  background: transparent;
-  cursor: pointer;
-}
-
-.ghostButton:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
 }
 
 .reportGrid {
@@ -355,26 +319,36 @@ select option {
   gap: 8px;
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .fullLabel {
   margin-top: 14px;
 }
 
-.fullLabel textarea {
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  border-radius: 14px;
+  padding: 12px 13px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+select option {
+  color: #111;
+}
+
+textarea {
   min-height: 92px;
   resize: vertical;
   line-height: 1.5;
 }
 
 .closeDay {
-  margin-top: 18px;
-}
-
-.historyList {
-  display: grid;
-  gap: 10px;
   margin-top: 18px;
 }
 
@@ -394,31 +368,94 @@ select option {
   margin-bottom: 4px;
 }
 
-.historyItem small {
-  color: rgba(255, 255, 255, 0.56);
+.taskForm {
+  display: grid;
+  grid-template-columns: 1fr 170px 100px auto;
+  gap: 10px;
+  margin-top: 18px;
 }
 
-.historyScore {
-  flex: 0 0 auto;
-  padding: 8px 10px;
+.ghostButton {
+  margin-top: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
+  padding: 10px 16px;
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  cursor: pointer;
+}
+
+.taskRow {
+  display: grid;
+  grid-template-columns: 1fr 42px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.taskEdit {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.taskEdit input {
+  font-weight: 800;
+}
+
+.taskMeta {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 8px;
+}
+
+.deleteButton {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.deleteButton:hover {
   color: #111;
-  font-size: 13px;
-  font-weight: 1000;
+  background: #ff6b6b;
 }
 
 @media (max-width: 800px) {
   .app {
     padding: 14px;
+    padding-bottom: 104px;
+  }
+
+  .topHeader {
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 44px;
+  }
+
+  .tabBar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    margin: 0;
+    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .tabBar button {
+    font-size: 12px;
+    padding: 12px 6px;
   }
 
   .scoreBlock {
     grid-template-columns: 1fr;
-  }
-
-  .circle {
-    width: 140px;
-    height: 140px;
   }
 
   .stats,
@@ -427,8 +464,8 @@ select option {
     grid-template-columns: 1fr;
   }
 
-  .taskRow {
-    grid-template-columns: 42px 1fr 42px;
+  .statCard {
+    padding: 13px;
   }
 
   .taskMeta {
