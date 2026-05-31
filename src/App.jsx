@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8.4 Govzalla Exact Prayer";
+const VERSION = "8.5 Smart Now";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
@@ -623,6 +623,155 @@ async function copyToClipboard(text) {
   await navigator.clipboard.writeText(text);
 }
 
+function parseTimeToday(time, dayOffset = 0) {
+  if (!time || !String(time).includes(":")) return null;
+
+  const [hoursRaw, minutesRaw] = String(time).split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+  const date = new Date();
+  date.setHours(hours);
+  date.setMinutes(minutes);
+  date.setSeconds(0);
+  date.setMilliseconds(0);
+
+  if (dayOffset) {
+    date.setDate(date.getDate() + dayOffset);
+  }
+
+  return date;
+}
+
+function formatCountdown(milliseconds) {
+  if (milliseconds <= 0) return "сейчас";
+
+  const totalMinutes = Math.ceil(milliseconds / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}ч ${minutes}м`;
+  }
+
+  return `${minutes}м`;
+}
+
+function getSmartNow(prayerToday, mainGoal, focusToday, done, tasks, businessToday, tick) {
+  const now = new Date(tick || Date.now());
+
+  const prayerOrder = [
+    ["fajr", "Фаджр"],
+    ["sunrise", "Восход"],
+    ["dhuhr", "Зухр"],
+    ["asr", "Аср"],
+    ["maghrib", "Магриб"],
+    ["isha", "Иша"],
+  ];
+
+  const todayPrayers = prayerOrder
+    .map(([key, label]) => {
+      const time = prayerToday[key]?.time || "";
+      const date = parseTimeToday(time);
+
+      if (!date) return null;
+
+      return {
+        key,
+        label,
+        time,
+        date,
+      };
+    })
+    .filter(Boolean);
+
+  if (todayPrayers.length === 0) {
+    return {
+      urgency: "warning",
+      title: "Время намаза не загружено",
+      subtitle: "Открой вкладку Намаз и нажми “Загрузить точное время”.",
+      command: "Без времени намаза приложение не сможет строить точный план дня.",
+      nextLabel: "—",
+      countdown: "—",
+      actionTab: "prayer",
+    };
+  }
+
+  let nextPrayer = todayPrayers.find((item) => item.date > now);
+
+  if (!nextPrayer) {
+    const firstPrayer = todayPrayers[0];
+
+    nextPrayer = {
+      ...firstPrayer,
+      date: parseTimeToday(firstPrayer.time, 1),
+    };
+  }
+
+  const previousPrayer = [...todayPrayers]
+    .reverse()
+    .find((item) => item.date <= now);
+
+  const minutesToNext = Math.round((nextPrayer.date - now) / 60000);
+  const countdown = formatCountdown(nextPrayer.date - now);
+
+  const mainTask = tasks.find((task) => task.id === "main-task");
+  const youtubeTask = tasks.find((task) => task.id === "no-youtube-before-main");
+
+  let urgency = "normal";
+  let title = `${nextPrayer.label} через ${countdown}`;
+  let subtitle = `Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
+  let command = "Держи день спокойно: один конкретный шаг, потом следующий.";
+  let actionTab = "today";
+
+  if (previousPrayer) {
+    subtitle = `Сейчас после ${previousPrayer.label}. Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
+  }
+
+  if (minutesToNext <= 15) {
+    urgency = "danger";
+    command = `До ${nextPrayer.label} осталось ${countdown}. Не начинай YouTube и тяжёлые дела. Подготовься к намазу.`;
+    actionTab = "prayer";
+  } else if (minutesToNext <= 35) {
+    urgency = "warning";
+    command = `До ${nextPrayer.label} осталось ${countdown}. Делай только короткую задачу без залипания.`;
+    actionTab = "routine";
+  } else if (!mainGoal.trim()) {
+    urgency = "warning";
+    title = "Выбери главный удар дня";
+    command = "Пока главная задача не выбрана, день будет расплываться. Запиши одну главную задачу.";
+    actionTab = "focus";
+  } else if (Number(focusToday.sessions || 0) < 1) {
+    command = "Главная задача выбрана. Запусти первый фокус на 10 минут.";
+    actionTab = "focus";
+  } else if (mainTask && !done[mainTask.id]) {
+    command = "Главная задача ещё не закрыта. Продолжай подходами по 10 минут.";
+    actionTab = "focus";
+  } else if (youtubeTask && !done[youtubeTask.id]) {
+    urgency = "warning";
+    command = "YouTube ещё нельзя. Сначала закрепи день: главная задача, бизнес или отчёт.";
+    actionTab = "today";
+  } else if (Number(businessToday.whatsappStatuses || 0) < 3) {
+    command = "Хорошее окно для бизнеса: добей WhatsApp-статусы или мини-шаг по WB.";
+    actionTab = "business";
+  } else {
+    command = "Основа дня держится. Следи за следующим намазом и не ломай вечер.";
+    actionTab = "routine";
+  }
+
+  return {
+    urgency,
+    title,
+    subtitle,
+    command,
+    nextLabel: nextPrayer.label,
+    countdown,
+    actionTab,
+  };
+}
+
 function App() {
   const todayKey = getTodayKey();
 
@@ -646,6 +795,7 @@ function App() {
   const [prayerError, setPrayerError] = useState("");
   const [focusRunning, setFocusRunning] = useState(false);
   const [focusSeconds, setFocusSeconds] = useState(FOCUS_DURATION);
+  const [nowTick, setNowTick] = useState(Date.now());
 
   const done = doneByDate[todayKey] || {};
   const mainGoal = mainGoals[todayKey] || "";
@@ -689,9 +839,26 @@ function App() {
     alert("Фокус-подход завершён.");
   }, [focusRunning, focusSeconds]);
 
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const scoreData = useMemo(() => getScoreData(tasks, done), [tasks, done]);
   const categoryStats = useMemo(() => getCategoryStats(tasks, done), [tasks, done]);
   const routineStats = useMemo(() => getRoutineStats(routineDone), [routineDone]);
+
+  const nowPanel = useMemo(() => {
+    return getSmartNow(
+      prayerToday,
+      mainGoal,
+      focusToday,
+      done,
+      tasks,
+      businessToday,
+      nowTick
+    );
+  }, [prayerToday, mainGoal, focusToday, done, tasks, businessToday, nowTick]);
 
   useEffect(() => {
     if (!prayerSettings.autoLoad) return;
@@ -1994,6 +2161,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

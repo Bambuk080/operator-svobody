@@ -966,3 +966,105 @@ button:disabled {
   background: rgba(141, 247, 193, 0.1);
   border-color: rgba(141, 247, 193, 0.22);
 }
+
+.nowPanel {
+  border-color: rgba(141, 247, 193, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(141, 247, 193, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
+}
+
+.nowPanel.warning {
+  border-color: rgba(249, 207, 114, 0.28);
+  background:
+    radial-gradient(circle at top left, rgba(249, 207, 114, 0.14), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
+}
+
+.nowPanel.danger {
+  border-color: rgba(255, 107, 107, 0.32);
+  background:
+    radial-gradient(circle at top left, rgba(255, 107, 107, 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
+}
+
+.nowGrid {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.nowTime {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nowTime strong {
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.nowTime small,
+.nowText p {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.nowText h2 {
+  margin-bottom: 6px;
+}
+
+.nowText p {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.nowCommand {
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #07100b;
+  background: #8df7c1;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.nowPanel.warning .nowCommand {
+  background: #f9cf72;
+}
+
+.nowPanel.danger .nowCommand {
+  background: #ff6b6b;
+}
+
+.nowActions {
+  display: grid;
+  min-width: 120px;
+}
+
+@media (max-width: 800px) {
+  .nowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nowTime {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .nowTime .label {
+    grid-column: 1 / -1;
+  }
+
+  .nowActions {
+    min-width: 0;
+  }
+
+  .nowTime strong {
+    font-size: 34px;
+  }
+}
