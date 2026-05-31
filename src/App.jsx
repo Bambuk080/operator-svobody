@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8.2 Quick Actions & Schedule";
+const VERSION = "8.3 Auto Prayer";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
@@ -129,6 +129,14 @@ const defaultPrayer = {
   sleep: { label: "Сон защищён", time: "", done: false },
 };
 
+const defaultPrayerSettings = {
+  city: "Grozny",
+  country: "Russia",
+  method: "14",
+  school: "0",
+  autoLoad: true,
+};
+
 const emptyBusiness = {
   mainProduct: "Swiss Bork magnesium complex + b6 60 tab",
   wbOrders: "",
@@ -192,6 +200,7 @@ const keys = {
   focus: "operator-v8-focus",
   routine: "operator-v8-routine",
   prayer: "operator-v8-prayer",
+  prayerSettings: "operator-v83-prayer-settings",
   business: "operator-v8-business",
   financeDays: "operator-v8-finance-days",
   financeSettings: "operator-v8-finance-settings",
@@ -297,6 +306,50 @@ function getScheduledTasks(prayerToday) {
       };
     })
     .sort((a, b) => a.sortValue - b.sortValue);
+}
+
+function getPrayerApiDate() {
+  const d = new Date();
+
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+}
+
+function cleanPrayerTime(value) {
+  if (!value) return "";
+
+  const match = String(value).match(/\d{1,2}:\d{2}/);
+  return match ? match[0] : "";
+}
+
+function mergePrayerTimingsFromApi(currentPrayer, timings) {
+  return {
+    ...defaultPrayer,
+    ...currentPrayer,
+    fajr: {
+      ...currentPrayer.fajr,
+      time: cleanPrayerTime(timings.Fajr),
+    },
+    sunrise: {
+      ...currentPrayer.sunrise,
+      time: cleanPrayerTime(timings.Sunrise),
+    },
+    dhuhr: {
+      ...currentPrayer.dhuhr,
+      time: cleanPrayerTime(timings.Dhuhr),
+    },
+    asr: {
+      ...currentPrayer.asr,
+      time: cleanPrayerTime(timings.Asr),
+    },
+    maghrib: {
+      ...currentPrayer.maghrib,
+      time: cleanPrayerTime(timings.Maghrib),
+    },
+    isha: {
+      ...currentPrayer.isha,
+      time: cleanPrayerTime(timings.Isha),
+    },
+  };
 }
 
 function n(value) {
@@ -480,6 +533,7 @@ function App() {
   const [focusByDate, setFocusByDate] = useState(() => loadJson(keys.focus, {}));
   const [routineByDate, setRoutineByDate] = useState(() => loadJson(keys.routine, {}));
   const [prayerByDate, setPrayerByDate] = useState(() => loadJson(keys.prayer, {}));
+  const [prayerSettings, setPrayerSettings] = useState(() => loadJson(keys.prayerSettings, defaultPrayerSettings));
   const [businessByDate, setBusinessByDate] = useState(() => loadJson(keys.business, {}));
   const [financeByDate, setFinanceByDate] = useState(() => loadJson(keys.financeDays, {}));
   const [financeSettings, setFinanceSettings] = useState(() => loadJson(keys.financeSettings, defaultFinanceSettings));
@@ -488,6 +542,8 @@ function App() {
   const [aiSettings, setAiSettings] = useState(() => loadJson(keys.aiSettings, defaultAiSettings));
   const [newTask, setNewTask] = useState({ title: "", category: "Дисциплина", points: 10 });
   const [importText, setImportText] = useState("");
+  const [prayerLoading, setPrayerLoading] = useState(false);
+  const [prayerError, setPrayerError] = useState("");
   const [focusRunning, setFocusRunning] = useState(false);
   const [focusSeconds, setFocusSeconds] = useState(FOCUS_DURATION);
 
@@ -506,6 +562,7 @@ function App() {
   useEffect(() => saveJson(keys.focus, focusByDate), [focusByDate]);
   useEffect(() => saveJson(keys.routine, routineByDate), [routineByDate]);
   useEffect(() => saveJson(keys.prayer, prayerByDate), [prayerByDate]);
+  useEffect(() => saveJson(keys.prayerSettings, prayerSettings), [prayerSettings]);
   useEffect(() => saveJson(keys.business, businessByDate), [businessByDate]);
   useEffect(() => saveJson(keys.financeDays, financeByDate), [financeByDate]);
   useEffect(() => saveJson(keys.financeSettings, financeSettings), [financeSettings]);
@@ -535,6 +592,14 @@ function App() {
   const scoreData = useMemo(() => getScoreData(tasks, done), [tasks, done]);
   const categoryStats = useMemo(() => getCategoryStats(tasks, done), [tasks, done]);
   const routineStats = useMemo(() => getRoutineStats(routineDone), [routineDone]);
+
+  useEffect(() => {
+    if (!prayerSettings.autoLoad) return;
+    if (prayerToday.fajr?.time) return;
+
+    fetchPrayerTimes({ silent: true });
+    // autoLoadPrayerEffect
+  }, [todayKey, prayerSettings.autoLoad]);
 
   const aiPrompt = useMemo(() => buildAiPrompt({
     scoreData,
@@ -703,6 +768,62 @@ function App() {
   function resetFocusTimer() {
     setFocusRunning(false);
     setFocusSeconds(FOCUS_DURATION);
+  }
+
+  function updatePrayerSettings(field, value) {
+    setPrayerSettings((prev) => ({
+      ...prev,
+      [field]: field === "autoLoad" ? Boolean(value) : value,
+    }));
+  }
+
+  async function fetchPrayerTimes(options = {}) {
+    const silent = Boolean(options.silent);
+
+    setPrayerLoading(true);
+    setPrayerError("");
+
+    try {
+      const params = new URLSearchParams({
+        city: prayerSettings.city || "Grozny",
+        country: prayerSettings.country || "Russia",
+        method: String(prayerSettings.method || "14"),
+        school: String(prayerSettings.school || "0"),
+      });
+
+      const url = `https://api.aladhan.com/v1/timingsByCity/${getPrayerApiDate()}?${params.toString()}`;
+      const response = await fetch(url);
+      const json = await response.json();
+
+      if (!response.ok || !json?.data?.timings) {
+        throw new Error("API не вернуло времена намаза");
+      }
+
+      setPrayerByDate((prev) => {
+        const current = {
+          ...defaultPrayer,
+          ...(prev[todayKey] || {}),
+        };
+
+        return {
+          ...prev,
+          [todayKey]: mergePrayerTimingsFromApi(current, json.data.timings),
+        };
+      });
+
+      if (!silent) {
+        alert("Время намаза загружено.");
+      }
+    } catch (error) {
+      console.log(error);
+      setPrayerError("Не получилось загрузить время. Проверь интернет или введи вручную.");
+
+      if (!silent) {
+        alert("Не получилось загрузить время намаза. Можно ввести вручную.");
+      }
+    } finally {
+      setPrayerLoading(false);
+    }
   }
 
   function updatePrayer(key, field, value) {
@@ -903,6 +1024,7 @@ function App() {
       setFocusByDate(data.focusByDate || {});
       setRoutineByDate(data.routineByDate || {});
       setPrayerByDate(data.prayerByDate || {});
+      setPrayerSettings(data.prayerSettings || defaultPrayerSettings);
       setBusinessByDate(data.businessByDate || {});
       setFinanceByDate(data.financeByDate || {});
       setFinanceSettings(data.financeSettings || defaultFinanceSettings);
@@ -1227,7 +1349,70 @@ function App() {
             <p className="label">Намаз</p>
             <h2>Основа дня</h2>
 
-            <p className="backupHint">Пока время вводится вручную. Автоматический расчёт для города добавим отдельным этапом.</p>
+            <p className="backupHint">
+              Время намаза загружается автоматически для выбранного города. Если местное расписание отличается,
+              можешь вручную поправить любое время.
+            </p>
+
+            <div className="autoPrayerBox">
+              <div>
+                <strong>{prayerSettings.city}, {prayerSettings.country}</strong>
+                <small>метод: {prayerSettings.method} · мазхаб Аср: {prayerSettings.school === "1" ? "Ханафи" : "Шафии/стандарт"}</small>
+              </div>
+
+              <button className="closeDay noTop" onClick={() => fetchPrayerTimes()} disabled={prayerLoading}>
+                {prayerLoading ? "Загрузка..." : "Загрузить время"}
+              </button>
+            </div>
+
+            {prayerError ? <p className="errorText">{prayerError}</p> : null}
+
+            <div className="reportGrid prayerSettingsGrid">
+              <label>
+                Город
+                <input
+                  value={prayerSettings.city}
+                  onChange={(event) => updatePrayerSettings("city", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Страна
+                <input
+                  value={prayerSettings.country}
+                  onChange={(event) => updatePrayerSettings("country", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Метод расчёта
+                <input
+                  type="number"
+                  value={prayerSettings.method}
+                  onChange={(event) => updatePrayerSettings("method", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Аср
+                <select
+                  value={prayerSettings.school}
+                  onChange={(event) => updatePrayerSettings("school", event.target.value)}
+                >
+                  <option value="0">Шафии / стандарт</option>
+                  <option value="1">Ханафи</option>
+                </select>
+              </label>
+
+              <label className="toggleLine">
+                <input
+                  type="checkbox"
+                  checked={Boolean(prayerSettings.autoLoad)}
+                  onChange={(event) => updatePrayerSettings("autoLoad", event.target.checked)}
+                />
+                Автозагрузка
+              </label>
+            </div>
 
             <div className="prayerList">
               {Object.entries(prayerToday).map(([key, item]) => (
@@ -1688,5 +1873,6 @@ function App() {
 }
 
 export default App;
+
 
 
