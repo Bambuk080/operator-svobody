@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8.1 iPhone Polish";
+const VERSION = "8.2 Quick Actions & Schedule";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
@@ -66,6 +66,54 @@ const dayBlocks = [
       { id: "evening-book", title: "Книга перед сном" },
       { id: "evening-sleep", title: "Телефон не ломает ночь" },
     ],
+  },
+];
+
+const defaultTimedTasks = [
+  {
+    id: "schedule-after-fajr",
+    title: "Коран / азкары после Фаджра",
+    type: "prayer",
+    prayerKey: "fajr",
+    offset: 0,
+    hint: "сразу после Фаджра",
+  },
+  {
+    id: "schedule-after-sunrise",
+    title: "Арабский или тренировка после восхода",
+    type: "prayer",
+    prayerKey: "sunrise",
+    offset: 30,
+    hint: "примерно через 30 минут после восхода",
+  },
+  {
+    id: "schedule-lunch-business",
+    title: "Мини-шаг по WB / бизнесу",
+    type: "fixed",
+    time: "12:40",
+    hint: "обеденный перерыв",
+  },
+  {
+    id: "schedule-whatsapp",
+    title: "WhatsApp-статусы / продажи",
+    type: "fixed",
+    time: "20:00",
+    hint: "вечерний бизнес-выход",
+  },
+  {
+    id: "schedule-after-isha",
+    title: "Отчёт, книга, подготовка ко сну",
+    type: "prayer",
+    prayerKey: "isha",
+    offset: 20,
+    hint: "после Иша",
+  },
+  {
+    id: "schedule-sleep",
+    title: "Телефон убрать, сон защитить",
+    type: "fixed",
+    time: "22:00",
+    hint: "не ломать Фаджр",
   },
 ];
 
@@ -193,6 +241,62 @@ function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function addMinutesToTime(time, offsetMinutes) {
+  if (!time || !time.includes(":")) return "";
+
+  const [hoursRaw, minutesRaw] = time.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+
+  const date = new Date();
+  date.setHours(hours);
+  date.setMinutes(minutes + Number(offsetMinutes || 0));
+  date.setSeconds(0);
+  date.setMilliseconds(0);
+
+  return date.toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getMinutesFromTime(time) {
+  if (!time || !time.includes(":")) return 99999;
+
+  const [hoursRaw, minutesRaw] = time.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return 99999;
+
+  return hours * 60 + minutes;
+}
+
+function getScheduledTasks(prayerToday) {
+  return defaultTimedTasks
+    .map((task) => {
+      if (task.type === "fixed") {
+        return {
+          ...task,
+          displayTime: task.time,
+          sortValue: getMinutesFromTime(task.time),
+        };
+      }
+
+      const prayerTime = prayerToday[task.prayerKey]?.time || "";
+      const displayTime = addMinutesToTime(prayerTime, task.offset);
+
+      return {
+        ...task,
+        displayTime: displayTime || "введи время",
+        sortValue: displayTime ? getMinutesFromTime(displayTime) : 99999,
+      };
+    })
+    .sort((a, b) => a.sortValue - b.sortValue);
 }
 
 function n(value) {
@@ -501,6 +605,54 @@ function App() {
         [id]: !(prev[todayKey] || {})[id],
       },
     }));
+  }
+
+  function markTaskDone(id) {
+    setDoneByDate((prev) => ({
+      ...prev,
+      [todayKey]: {
+        ...(prev[todayKey] || {}),
+        [id]: true,
+      },
+    }));
+  }
+
+  function incrementBusiness(field) {
+    setBusinessByDate((prev) => {
+      const current = {
+        ...emptyBusiness,
+        ...(prev[todayKey] || {}),
+      };
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [field]: String(n(current[field]) + 1),
+        },
+      };
+    });
+  }
+
+  function quickPrayerDone(key) {
+    setPrayerByDate((prev) => {
+      const current = {
+        ...defaultPrayer,
+        ...(prev[todayKey] || {}),
+      };
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [key]: {
+            ...current[key],
+            done: true,
+            time: current[key].time || getTimeNow(),
+          },
+        },
+      };
+    });
   }
 
   function toggleRoutine(id) {
@@ -848,6 +1000,93 @@ function App() {
               <div className="quickCard">
                 <p className="label">Бизнес</p>
                 <strong>{businessToday.wbOrders || 0} WB · {businessToday.outsideOrders || 0} вне WB</strong>
+              </div>
+            </section>
+
+            <section className="panel quickActionsPanel">
+              <p className="label">Быстрые действия</p>
+              <h2>Закрыть без лишней печати</h2>
+
+              <div className="actionGrid">
+                <button className="actionButton" onClick={() => completeFocusSession("quick")}>
+                  <strong>+1 фокус</strong>
+                  <small>засчитать подход</small>
+                </button>
+
+                <button className="actionButton" onClick={() => markTaskDone("main-task")}>
+                  <strong>Главная закрыта</strong>
+                  <small>день сдвинулся</small>
+                </button>
+
+                <button className="actionButton" onClick={() => quickPrayerDone("fajr")}>
+                  <strong>Фаджр закрыт</strong>
+                  <small>время поставится само</small>
+                </button>
+
+                <button className="actionButton" onClick={() => quickPrayerDone("quran")}>
+                  <strong>Коран закрыт</strong>
+                  <small>религиозный минимум</small>
+                </button>
+
+                <button className="actionButton" onClick={() => incrementBusiness("wbOrders")}>
+                  <strong>+1 WB</strong>
+                  <small>заказ на WB</small>
+                </button>
+
+                <button className="actionButton" onClick={() => incrementBusiness("outsideOrders")}>
+                  <strong>+1 вне WB</strong>
+                  <small>продажа напрямую</small>
+                </button>
+
+                <button className="actionButton" onClick={() => incrementBusiness("whatsappStatuses")}>
+                  <strong>+1 статус</strong>
+                  <small>WhatsApp активность</small>
+                </button>
+
+                <button className="actionButton" onClick={() => setActiveTab("report")}>
+                  <strong>Отчёт</strong>
+                  <small>закрыть день</small>
+                </button>
+              </div>
+            </section>
+
+            <section className="panel schedulePanel">
+              <div className="sectionHead">
+                <div>
+                  <p className="label">План по времени</p>
+                  <h2>Что делать и когда</h2>
+                </div>
+
+                <strong>
+                  {getScheduledTasks(prayerToday).filter((item) => routineDone[item.id]).length}/
+                  {getScheduledTasks(prayerToday).length}
+                </strong>
+              </div>
+
+              <p className="backupHint">
+                Задачи “после Фаджра”, “после восхода” и “после Иша” считаются от времени,
+                которое ты укажешь во вкладке “Намаз”.
+              </p>
+
+              <div className="scheduleList">
+                {getScheduledTasks(prayerToday).map((item) => (
+                  <button
+                    key={item.id}
+                    className={`scheduleItem ${routineDone[item.id] ? "done" : ""}`}
+                    onClick={() => toggleRoutine(item.id)}
+                  >
+                    <span className="scheduleTime">{item.displayTime}</span>
+
+                    <span>
+                      <strong>{item.title}</strong>
+                      <small>{item.hint}</small>
+                    </span>
+
+                    <span className="checkBox">
+                      {routineDone[item.id] ? "✓" : ""}
+                    </span>
+                  </button>
+                ))}
               </div>
             </section>
 
@@ -1449,4 +1688,5 @@ function App() {
 }
 
 export default App;
+
 

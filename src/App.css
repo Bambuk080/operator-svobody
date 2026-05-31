@@ -776,3 +776,120 @@ textarea {
     padding: 11px 11px;
   }
 }
+
+.quickActionsPanel {
+  border-color: rgba(141, 247, 193, 0.16);
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.actionButton {
+  display: grid;
+  gap: 4px;
+  min-height: 84px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.actionButton strong {
+  font-size: 15px;
+}
+
+.actionButton small {
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.35;
+}
+
+.schedulePanel {
+  border-color: rgba(249, 207, 114, 0.16);
+}
+
+.scheduleList {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scheduleItem {
+  display: grid;
+  grid-template-columns: 74px 1fr 34px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 13px;
+  color: #fff;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.scheduleItem.done {
+  border-color: rgba(141, 247, 193, 0.42);
+  background: rgba(141, 247, 193, 0.13);
+}
+
+.scheduleItem.done .checkBox {
+  background: #8df7c1;
+}
+
+.scheduleTime {
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  border-radius: 14px;
+  color: #07100b;
+  background: #f9cf72;
+  font-weight: 1000;
+  font-size: 13px;
+}
+
+.scheduleItem strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.scheduleItem small {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 800px) {
+  .actionGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .actionButton {
+    min-height: 78px;
+  }
+
+  .scheduleItem {
+    grid-template-columns: 70px 1fr 34px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 390px) {
+  .actionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scheduleItem {
+    grid-template-columns: 1fr;
+  }
+
+  .scheduleTime {
+    width: fit-content;
+    padding: 0 12px;
+  }
+}
