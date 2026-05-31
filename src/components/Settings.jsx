@@ -1,4 +1,4 @@
-import { Backup } from "./Backup";
+﻿import { Backup } from "./Backup";
 
 export function Settings({
   categories,

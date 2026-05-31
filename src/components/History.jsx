@@ -1,7 +1,7 @@
-import { getStatusClass } from "../utils/scoring";
+﻿import { getStatusClass } from "../utils/scoring";
 
 export function History({ history }) {
-  const lastHistory = history.slice(0, 10);
+  const lastHistory = history.slice(0, 20);
 
   return (
     <section className="panel">
@@ -22,6 +22,7 @@ export function History({ history }) {
                   {item.completedCount}/{item.totalTasks} задач ·{" "}
                   {item.earnedPoints}/{item.totalPoints} баллов
                   {item.focusSessions ? ` · фокус: ${item.focusSessions}` : ""}
+                  {item.business?.wbOrders ? ` · WB: ${item.business.wbOrders}` : ""}
                 </small>
 
                 {item.mainGoal ? (

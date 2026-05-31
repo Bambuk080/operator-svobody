@@ -1,4 +1,4 @@
-export function makeId() {
+﻿export function makeId() {
   return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
@@ -16,5 +16,12 @@ export function getPrettyDate() {
     weekday: "long",
     day: "numeric",
     month: "long",
+  });
+}
+
+export function getTimeNow() {
+  return new Date().toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }

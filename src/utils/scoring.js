@@ -1,4 +1,4 @@
-export function getStatus(score) {
+﻿export function getStatus(score) {
   if (score >= 90) return "Отличный день";
   if (score >= 75) return "Сильный день";
   if (score >= 60) return "Нормальный день";
@@ -55,7 +55,7 @@ export function getCategoryStats(categories, tasks, done) {
   });
 }
 
-export function getOperatorText(score, done, tasks) {
+export function getOperatorText(score, done, tasks, focusSessions, mainGoal) {
   const mainTask = tasks.find((task) => task.id === "main-task");
   const fajrTask = tasks.find((task) => task.id === "fajr");
   const youtubeTask = tasks.find((task) => task.id === "no-youtube-before-main");
@@ -64,8 +64,16 @@ export function getOperatorText(score, done, tasks) {
     return "Фаджр — главный маркер дня. Если он сорван, нельзя делать вид, что всё нормально. Сегодня задача — спасти остаток дня и защитить сон.";
   }
 
+  if (!mainGoal?.trim()) {
+    return "Главная задача дня ещё не выбрана. Пока нет главной задачи — день управляет тобой, а не ты днём.";
+  }
+
+  if (focusSessions < 1) {
+    return "Главная задача выбрана. Теперь нужен первый 10-минутный подход. Не думай долго — запускай фокус.";
+  }
+
   if (mainTask && !done[mainTask.id]) {
-    return "Главная задача не закрыта. Не бери новые дела. Не уходи в YouTube. Разбей главную задачу на 10 минут и сделай первый подход.";
+    return "Главная задача ещё не закрыта. Не бери новые дела. Продолжай подходами по 10 минут.";
   }
 
   if (youtubeTask && !done[youtubeTask.id]) {
@@ -81,4 +89,13 @@ export function getOperatorText(score, done, tasks) {
   }
 
   return "День идёт в слив. Сейчас не нужен идеальный план. Нужен один честный шаг: религия, главная задача или сон.";
+}
+
+export function getPercent(value, max) {
+  const numericValue = Number(value || 0);
+  const numericMax = Number(max || 0);
+
+  if (!numericMax) return 0;
+
+  return Math.min(100, Math.round((numericValue / numericMax) * 100));
 }

@@ -1,10 +1,8 @@
-import {
+﻿import {
   getOperatorText,
   getStatus,
   getStatusClass,
 } from "../utils/scoring";
-
-import { FocusTimer } from "./FocusTimer";
 
 export function Today({
   tasks,
@@ -13,9 +11,9 @@ export function Today({
   categoryStats,
   onToggleTask,
   mainGoal,
-  onUpdateMainGoal,
   focusSessions,
-  onFocusComplete,
+  businessToday,
+  financeToday,
 }) {
   const { score, completedCount, earnedPoints, totalPoints } = scoreData;
 
@@ -32,7 +30,7 @@ export function Today({
             <p className={`status ${getStatusClass(score)}`}>
               {getStatus(score)}
             </p>
-            <h2>{getOperatorText(score, done, tasks)}</h2>
+            <h2>{getOperatorText(score, done, tasks, focusSessions, mainGoal)}</h2>
             <p className="command">
               Команда дня: YouTube запрещён до выполнения главной задачи.
             </p>
@@ -49,12 +47,27 @@ export function Today({
         </p>
       </section>
 
-      <FocusTimer
-        mainGoal={mainGoal}
-        onUpdateMainGoal={onUpdateMainGoal}
-        focusSessions={focusSessions}
-        onFocusComplete={onFocusComplete}
-      />
+      <section className="quickGrid">
+        <div className="quickCard">
+          <p className="label">Главная задача</p>
+          <strong>{mainGoal?.trim() || "Не выбрана"}</strong>
+        </div>
+
+        <div className="quickCard">
+          <p className="label">Фокус</p>
+          <strong>{focusSessions} подходов</strong>
+        </div>
+
+        <div className="quickCard">
+          <p className="label">Бизнес</p>
+          <strong>{businessToday?.wbOrders || 0} WB · {businessToday?.outsideOrders || 0} вне WB</strong>
+        </div>
+
+        <div className="quickCard">
+          <p className="label">Финансы</p>
+          <strong>Долг: +{financeToday?.debtDeposit || 0} ₽</strong>
+        </div>
+      </section>
 
       <section className="stats">
         {categoryStats.map((item) => (

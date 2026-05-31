@@ -1,7 +1,7 @@
-.app {
+﻿.app {
   min-height: 100vh;
   padding: 18px;
-  padding-bottom: 96px;
+  padding-bottom: 108px;
   color: #f5f7fb;
   background:
     radial-gradient(circle at top left, rgba(90, 255, 190, 0.18), transparent 30%),
@@ -48,7 +48,10 @@ h2 {
 .rule p,
 .miniInfo,
 .emptyText,
-.backupHint {
+.backupHint,
+.summaryLine span,
+.focusInfo p,
+.historyGoal {
   color: rgba(255, 255, 255, 0.68);
   line-height: 1.6;
 }
@@ -69,11 +72,11 @@ h2 {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 8px;
   margin: 0 0 14px;
   padding: 8px;
+  overflow-x: auto;
   border-radius: 999px;
   background: rgba(7, 9, 13, 0.72);
   backdrop-filter: blur(18px);
@@ -81,9 +84,10 @@ h2 {
 }
 
 .tabBar button {
+  flex: 0 0 auto;
   border: 0;
   border-radius: 999px;
-  padding: 10px 8px;
+  padding: 10px 14px;
   color: rgba(255, 255, 255, 0.65);
   background: transparent;
   font-weight: 900;
@@ -196,7 +200,8 @@ h2 {
 }
 
 .progress,
-.smallProgress {
+.smallProgress,
+.focusProgress {
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.09);
@@ -210,7 +215,8 @@ h2 {
 }
 
 .progressFill,
-.smallProgressFill {
+.smallProgressFill,
+.focusProgressFill {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #8df7c1, #f9cf72);
@@ -224,18 +230,31 @@ h2 {
   z-index: 1;
 }
 
-.stats {
+.quickGrid,
+.stats,
+.moneyGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 14px;
 }
 
-.statCard {
+.stats {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.quickCard,
+.statCard,
+.moneyCard {
   padding: 14px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.045);
+}
+
+.quickCard strong {
+  display: block;
+  line-height: 1.4;
 }
 
 .statTop {
@@ -246,7 +265,12 @@ h2 {
   font-size: 13px;
 }
 
-.statTop span {
+.statTop span,
+.quickCard small,
+.businessHero small,
+.financeSummary small,
+.prayerItem small,
+.moneyCard small {
   color: rgba(255, 255, 255, 0.62);
 }
 
@@ -256,7 +280,8 @@ h2 {
 
 .taskList,
 .settingsList,
-.historyList {
+.historyList,
+.prayerList {
   display: grid;
   gap: 10px;
   margin-top: 16px;
@@ -277,7 +302,8 @@ h2 {
   cursor: pointer;
 }
 
-.taskCard.done {
+.taskCard.done,
+.prayerItem.done {
   border-color: rgba(141, 247, 193, 0.4);
   background: rgba(141, 247, 193, 0.12);
 }
@@ -287,13 +313,16 @@ h2 {
   height: 32px;
   display: grid;
   place-items: center;
+  border: 0;
   border-radius: 10px;
   color: #07100b;
   background: rgba(255, 255, 255, 0.08);
   font-weight: 1000;
+  cursor: pointer;
 }
 
-.taskCard.done .checkBox {
+.taskCard.done .checkBox,
+.prayerItem.done .checkBox {
   background: #8df7c1;
 }
 
@@ -401,15 +430,12 @@ textarea {
   cursor: pointer;
 }
 
-.backupActions {
+.backupActions,
+.focusActions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 16px;
-}
-
-.backupHint {
-  margin-bottom: 0;
 }
 
 .taskRow {
@@ -452,53 +478,6 @@ textarea {
   background: #ff6b6b;
 }
 
-@media (max-width: 800px) {
-  .app {
-    padding: 14px;
-    padding-bottom: 104px;
-  }
-
-  .topHeader {
-    align-items: center;
-  }
-
-  h1 {
-    font-size: 44px;
-  }
-
-  .tabBar {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    top: auto;
-    margin: 0;
-    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.55);
-  }
-
-  .tabBar button {
-    font-size: 12px;
-    padding: 12px 6px;
-  }
-
-  .scoreBlock {
-    grid-template-columns: 1fr;
-  }
-
-  .stats,
-  .taskForm,
-  .reportGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .statCard {
-    padding: 13px;
-  }
-
-  .taskMeta {
-    grid-template-columns: 1fr;
-  }
-}
 .focusPanel {
   border-color: rgba(141, 247, 193, 0.18);
 }
@@ -543,41 +522,107 @@ textarea {
   font-size: 18px;
 }
 
-.focusInfo p {
-  margin: 0 0 14px;
-  color: rgba(255, 255, 255, 0.68);
-  line-height: 1.6;
-}
-
 .focusProgress {
   height: 12px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-}
-
-.focusProgressFill {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #8df7c1, #f9cf72);
-  transition: width 0.45s ease;
-}
-
-.focusActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
 }
 
 .historyGoal {
   margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.5;
+}
+
+.summaryLine {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0;
+}
+
+.prayerItem {
+  display: grid;
+  grid-template-columns: 34px 1fr 110px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.prayerItem strong {
+  display: block;
+}
+
+.businessHero,
+.financeSummary {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.businessHero div,
+.financeSummary div {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.businessHero strong,
+.financeSummary strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.spacedLabel {
+  margin-top: 22px;
 }
 
 @media (max-width: 800px) {
-  .focusBox {
+  .app {
+    padding: 14px;
+    padding-bottom: 116px;
+  }
+
+  .topHeader {
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 44px;
+  }
+
+  .tabBar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    margin: 0;
+    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.55);
+  }
+
+  .tabBar button {
+    font-size: 12px;
+    padding: 12px 12px;
+  }
+
+  .scoreBlock,
+  .focusBox,
+  .quickGrid,
+  .stats,
+  .taskForm,
+  .reportGrid,
+  .moneyGrid,
+  .businessHero,
+  .financeSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .statCard {
+    padding: 13px;
+  }
+
+  .taskMeta {
     grid-template-columns: 1fr;
   }
 
@@ -593,5 +638,13 @@ textarea {
   .focusActions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .prayerItem {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .prayerItem input {
+    grid-column: 1 / -1;
   }
 }

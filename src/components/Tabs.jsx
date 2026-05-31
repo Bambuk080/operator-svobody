@@ -1,11 +1,4 @@
-const tabs = [
-  { id: "today", label: "Сегодня" },
-  { id: "report", label: "Отчёт" },
-  { id: "history", label: "История" },
-  { id: "settings", label: "Настройки" },
-];
-
-export function Tabs({ activeTab, setActiveTab }) {
+﻿export function Tabs({ tabs, activeTab, setActiveTab }) {
   return (
     <nav className="tabBar">
       {tabs.map((tab) => (

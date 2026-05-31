@@ -1,4 +1,4 @@
-export function loadJson(key, fallback) {
+﻿export function loadJson(key, fallback) {
   try {
     const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : fallback;

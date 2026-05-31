@@ -1,4 +1,4 @@
-export function Backup({
+﻿export function Backup({
   importText,
   setImportText,
   onCopyBackup,
@@ -11,8 +11,8 @@ export function Backup({
       <h2>Сохранить или восстановить данные</h2>
 
       <p className="backupHint">
-        Здесь хранятся задачи, галочки, вечерние отчёты и история.
-        Перед крупными обновлениями лучше делать резервную копию.
+        Здесь хранятся задачи, галочки, вечерние отчёты, история, фокус, бизнес,
+        финансы и блок намаза. Перед крупными обновлениями лучше делать резервную копию.
       </p>
 
       <div className="backupActions">

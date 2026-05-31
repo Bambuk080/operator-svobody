@@ -1,4 +1,4 @@
-export function Report({ report, onUpdateReport, onCloseDay }) {
+﻿export function Report({ report, onUpdateReport, onCloseDay }) {
   return (
     <section className="panel">
       <p className="label">Вечерний отчёт</p>

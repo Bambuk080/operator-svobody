@@ -1,10 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-import { categories, defaultTasks, emptyReport, storageKeys } from "./data/defaults";
+import {
+  appVersion,
+  categories,
+  defaultTasks,
+  emptyReport,
+  storageKeys,
+  tabs,
+  defaultPrayerDay,
+  emptyBusinessDay,
+  emptyFinanceDay,
+  defaultFinanceSettings,
+} from "./data/defaults";
+
 import { Header } from "./components/Header";
 import { Tabs } from "./components/Tabs";
 import { Today } from "./components/Today";
+import { FocusTimer } from "./components/FocusTimer";
+import { PrayerPanel } from "./components/PrayerPanel";
+import { BusinessPanel } from "./components/BusinessPanel";
+import { FinancePanel } from "./components/FinancePanel";
 import { Report } from "./components/Report";
 import { History } from "./components/History";
 import { Settings } from "./components/Settings";
@@ -12,6 +28,13 @@ import { Settings } from "./components/Settings";
 import { getPrettyDate, getTodayKey, makeId } from "./utils/date";
 import { loadJson, saveJson } from "./utils/storage";
 import { getCategoryStats, getScoreData, getStatus } from "./utils/scoring";
+
+function mergePrayerDay(day) {
+  return {
+    ...defaultPrayerDay,
+    ...(day || {}),
+  };
+}
 
 function App() {
   const todayKey = getTodayKey();
@@ -42,6 +65,22 @@ function App() {
     loadJson(storageKeys.mainGoalsByDate, {})
   );
 
+  const [prayerByDate, setPrayerByDate] = useState(() =>
+    loadJson(storageKeys.prayerByDate, {})
+  );
+
+  const [businessByDate, setBusinessByDate] = useState(() =>
+    loadJson(storageKeys.businessByDate, {})
+  );
+
+  const [financeByDate, setFinanceByDate] = useState(() =>
+    loadJson(storageKeys.financeByDate, {})
+  );
+
+  const [financeSettings, setFinanceSettings] = useState(() =>
+    loadJson(storageKeys.financeSettings, defaultFinanceSettings)
+  );
+
   const [newTask, setNewTask] = useState({
     title: "",
     category: "Дисциплина",
@@ -54,34 +93,22 @@ function App() {
   const report = reportsByDate[todayKey] || emptyReport;
   const focusToday = focusByDate[todayKey] || { sessions: 0 };
   const mainGoal = mainGoalsByDate[todayKey] || "";
+  const prayerToday = mergePrayerDay(prayerByDate[todayKey]);
+  const businessToday = { ...emptyBusinessDay, ...(businessByDate[todayKey] || {}) };
+  const financeToday = { ...emptyFinanceDay, ...(financeByDate[todayKey] || {}) };
 
-  useEffect(() => {
-    saveJson(storageKeys.tasks, tasks);
-  }, [tasks]);
+  useEffect(() => saveJson(storageKeys.tasks, tasks), [tasks]);
+  useEffect(() => saveJson(storageKeys.doneByDate, doneByDate), [doneByDate]);
+  useEffect(() => saveJson(storageKeys.reportsByDate, reportsByDate), [reportsByDate]);
+  useEffect(() => saveJson(storageKeys.history, history), [history]);
+  useEffect(() => saveJson(storageKeys.focusByDate, focusByDate), [focusByDate]);
+  useEffect(() => saveJson(storageKeys.mainGoalsByDate, mainGoalsByDate), [mainGoalsByDate]);
+  useEffect(() => saveJson(storageKeys.prayerByDate, prayerByDate), [prayerByDate]);
+  useEffect(() => saveJson(storageKeys.businessByDate, businessByDate), [businessByDate]);
+  useEffect(() => saveJson(storageKeys.financeByDate, financeByDate), [financeByDate]);
+  useEffect(() => saveJson(storageKeys.financeSettings, financeSettings), [financeSettings]);
 
-  useEffect(() => {
-    saveJson(storageKeys.doneByDate, doneByDate);
-  }, [doneByDate]);
-
-  useEffect(() => {
-    saveJson(storageKeys.reportsByDate, reportsByDate);
-  }, [reportsByDate]);
-
-  useEffect(() => {
-    saveJson(storageKeys.history, history);
-  }, [history]);
-
-  useEffect(() => {
-    saveJson(storageKeys.focusByDate, focusByDate);
-  }, [focusByDate]);
-
-  useEffect(() => {
-    saveJson(storageKeys.mainGoalsByDate, mainGoalsByDate);
-  }, [mainGoalsByDate]);
-
-  const scoreData = useMemo(() => {
-    return getScoreData(tasks, done);
-  }, [tasks, done]);
+  const scoreData = useMemo(() => getScoreData(tasks, done), [tasks, done]);
 
   const categoryStats = useMemo(() => {
     return getCategoryStats(categories, tasks, done);
@@ -90,7 +117,7 @@ function App() {
   const backupObject = useMemo(() => {
     return {
       app: "operator-svobody",
-      version: "2.1",
+      version: appVersion,
       createdAt: new Date().toISOString(),
       tasks,
       doneByDate,
@@ -98,12 +125,25 @@ function App() {
       history,
       focusByDate,
       mainGoalsByDate,
+      prayerByDate,
+      businessByDate,
+      financeByDate,
+      financeSettings,
     };
-  }, [tasks, doneByDate, reportsByDate, history, focusByDate, mainGoalsByDate]);
+  }, [
+    tasks,
+    doneByDate,
+    reportsByDate,
+    history,
+    focusByDate,
+    mainGoalsByDate,
+    prayerByDate,
+    businessByDate,
+    financeByDate,
+    financeSettings,
+  ]);
 
-  const backupText = useMemo(() => {
-    return JSON.stringify(backupObject, null, 2);
-  }, [backupObject]);
+  const backupText = useMemo(() => JSON.stringify(backupObject, null, 2), [backupObject]);
 
   function toggleTask(id) {
     setDoneByDate((prev) => ({
@@ -116,28 +156,16 @@ function App() {
   }
 
   function resetDay() {
-    const confirmReset = window.confirm("Сбросить отметки, отчёт, фокус и главную задачу за сегодня?");
+    const confirmReset = window.confirm("Сбросить данные за сегодня?");
     if (!confirmReset) return;
 
-    setDoneByDate((prev) => ({
-      ...prev,
-      [todayKey]: {},
-    }));
-
-    setReportsByDate((prev) => ({
-      ...prev,
-      [todayKey]: emptyReport,
-    }));
-
-    setFocusByDate((prev) => ({
-      ...prev,
-      [todayKey]: { sessions: 0 },
-    }));
-
-    setMainGoalsByDate((prev) => ({
-      ...prev,
-      [todayKey]: "",
-    }));
+    setDoneByDate((prev) => ({ ...prev, [todayKey]: {} }));
+    setReportsByDate((prev) => ({ ...prev, [todayKey]: emptyReport }));
+    setFocusByDate((prev) => ({ ...prev, [todayKey]: { sessions: 0 } }));
+    setMainGoalsByDate((prev) => ({ ...prev, [todayKey]: "" }));
+    setPrayerByDate((prev) => ({ ...prev, [todayKey]: defaultPrayerDay }));
+    setBusinessByDate((prev) => ({ ...prev, [todayKey]: emptyBusinessDay }));
+    setFinanceByDate((prev) => ({ ...prev, [todayKey]: emptyFinanceDay }));
   }
 
   function addTask(event) {
@@ -232,6 +260,69 @@ function App() {
     });
   }
 
+  function updatePrayerTime(key, value) {
+    setPrayerByDate((prev) => {
+      const current = mergePrayerDay(prev[todayKey]);
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [key]: {
+            ...current[key],
+            time: value,
+          },
+        },
+      };
+    });
+  }
+
+  function togglePrayer(key) {
+    setPrayerByDate((prev) => {
+      const current = mergePrayerDay(prev[todayKey]);
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [key]: {
+            ...current[key],
+            done: !current[key].done,
+          },
+        },
+      };
+    });
+  }
+
+  function updateBusiness(field, value) {
+    setBusinessByDate((prev) => ({
+      ...prev,
+      [todayKey]: {
+        ...emptyBusinessDay,
+        ...(prev[todayKey] || {}),
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateFinanceToday(field, value) {
+    setFinanceByDate((prev) => ({
+      ...prev,
+      [todayKey]: {
+        ...emptyFinanceDay,
+        ...(prev[todayKey] || {}),
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateFinanceSettings(field, value) {
+    setFinanceSettings((prev) => ({
+      ...prev,
+      [field]: Number(value),
+    }));
+  }
+
   function resetTasksToDefault() {
     const confirmReset = window.confirm("Вернуть стандартные задачи?");
     if (!confirmReset) return;
@@ -252,11 +343,14 @@ function App() {
       report,
       mainGoal,
       focusSessions: focusToday.sessions || 0,
+      prayer: prayerToday,
+      business: businessToday,
+      finance: financeToday,
     };
 
     setHistory((prev) => {
       const withoutToday = prev.filter((item) => item.date !== todayKey);
-      return [record, ...withoutToday].slice(0, 30);
+      return [record, ...withoutToday].slice(0, 60);
     });
 
     setActiveTab("history");
@@ -287,7 +381,7 @@ function App() {
 
   function restoreBackup() {
     const confirmRestore = window.confirm(
-      "Восстановить данные из резервной копии? Текущие задачи, отчёты и история будут заменены."
+      "Восстановить данные из резервной копии? Текущие данные будут заменены."
     );
 
     if (!confirmRestore) return;
@@ -306,6 +400,10 @@ function App() {
       setHistory(Array.isArray(data.history) ? data.history : []);
       setFocusByDate(data.focusByDate || {});
       setMainGoalsByDate(data.mainGoalsByDate || {});
+      setPrayerByDate(data.prayerByDate || {});
+      setBusinessByDate(data.businessByDate || {});
+      setFinanceByDate(data.financeByDate || {});
+      setFinanceSettings(data.financeSettings || defaultFinanceSettings);
 
       alert("Данные восстановлены.");
     } catch {
@@ -316,9 +414,13 @@ function App() {
   return (
     <main className="app">
       <div className="shell">
-        <Header prettyDate={getPrettyDate()} onResetDay={resetDay} />
+        <Header
+          prettyDate={getPrettyDate()}
+          version={appVersion}
+          onResetDay={resetDay}
+        />
 
-        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "today" && (
           <Today
@@ -328,9 +430,42 @@ function App() {
             categoryStats={categoryStats}
             onToggleTask={toggleTask}
             mainGoal={mainGoal}
+            focusSessions={focusToday.sessions || 0}
+            businessToday={businessToday}
+            financeToday={financeToday}
+          />
+        )}
+
+        {activeTab === "focus" && (
+          <FocusTimer
+            mainGoal={mainGoal}
             onUpdateMainGoal={updateMainGoal}
             focusSessions={focusToday.sessions || 0}
             onFocusComplete={completeFocusSession}
+          />
+        )}
+
+        {activeTab === "prayer" && (
+          <PrayerPanel
+            prayerToday={prayerToday}
+            onUpdatePrayerTime={updatePrayerTime}
+            onTogglePrayer={togglePrayer}
+          />
+        )}
+
+        {activeTab === "business" && (
+          <BusinessPanel
+            businessToday={businessToday}
+            onUpdateBusiness={updateBusiness}
+          />
+        )}
+
+        {activeTab === "finance" && (
+          <FinancePanel
+            financeSettings={financeSettings}
+            financeToday={financeToday}
+            onUpdateFinanceSettings={updateFinanceSettings}
+            onUpdateFinanceToday={updateFinanceToday}
           />
         )}
 
