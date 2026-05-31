@@ -1,11 +1,12 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8.5 Smart Now";
+const VERSION = "9 Human Apple Light";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
   { id: "today", label: "Сегодня" },
+  { id: "widgets", label: "Виджеты" },
   { id: "focus", label: "Фокус" },
   { id: "routine", label: "Режим" },
   { id: "prayer", label: "Намаз" },
@@ -19,6 +20,33 @@ const tabs = [
 ];
 
 const categories = ["Религия", "Дисциплина", "Бизнес", "Тело", "Знания"];
+
+const dayModes = {
+  normal: {
+    label: "Обычный",
+    title: "Держим курс",
+    description: "Работаем спокойно: религия, главный шаг, бизнес, тело, сон.",
+    minimum: 5,
+  },
+  soft: {
+    label: "Мягкий",
+    title: "Без давления",
+    description: "День не идеальный — делаем главное без самоуничтожения.",
+    minimum: 3,
+  },
+  recovery: {
+    label: "Восстановление",
+    title: "Вернуть ресурс",
+    description: "Цель — не выжать себя, а сохранить Фаджр, сон и ясность.",
+    minimum: 2,
+  },
+  emergency: {
+    label: "Аварийный",
+    title: "Спасти день",
+    description: "Только минимум: намаз, один честный шаг, без залипания.",
+    minimum: 1,
+  },
+};
 
 const defaultTasks = [
   { id: "fajr", title: "Фаджр вовремя", category: "Религия", points: 12 },
@@ -37,7 +65,7 @@ const dayBlocks = [
   {
     id: "morning",
     title: "Утро",
-    subtitle: "Фаджр, ясность, первый удар",
+    subtitle: "Фаджр, ясность, первый шаг",
     items: [
       { id: "morning-fajr", title: "Фаджр без торга" },
       { id: "morning-quran", title: "Коран / азкары" },
@@ -48,7 +76,7 @@ const dayBlocks = [
   {
     id: "day",
     title: "День",
-    subtitle: "Двигать дело, не расплываться",
+    subtitle: "Не расплываться, двигать дело",
     items: [
       { id: "day-work", title: "Работа / учёба без хаоса" },
       { id: "day-wb", title: "Мини-шаг по WB / товару" },
@@ -129,14 +157,6 @@ const defaultPrayer = {
   sleep: { label: "Сон защищён", time: "", done: false },
 };
 
-const defaultPrayerSettings = {
-  city: "Grozny",
-  country: "Russia",
-  method: "14",
-  school: "0",
-  autoLoad: true,
-};
-
 const emptyBusiness = {
   mainProduct: "Swiss Bork magnesium complex + b6 60 tab",
   wbOrders: "",
@@ -188,8 +208,8 @@ const emptyReport = {
 };
 
 const defaultAiSettings = {
-  tone: "жёстко, но справедливо",
-  mainRule: "YouTube запрещён до выполнения главной задачи",
+  tone: "спокойно, честно, по делу",
+  mainRule: "сначала намаз, ясность и главный шаг; потом остальное",
   goal: "религия, дисциплина, бизнес, тело, знания и финансовая свобода",
 };
 
@@ -200,13 +220,13 @@ const keys = {
   focus: "operator-v8-focus",
   routine: "operator-v8-routine",
   prayer: "operator-v8-prayer",
-  prayerSettings: "operator-v83-prayer-settings",
   business: "operator-v8-business",
   financeDays: "operator-v8-finance-days",
   financeSettings: "operator-v8-finance-settings",
   reports: "operator-v8-reports",
   history: "operator-v8-history",
   aiSettings: "operator-v8-ai-settings",
+  dayModes: "operator-v9-day-modes",
 };
 
 function loadJson(key, fallback) {
@@ -252,20 +272,109 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function addMinutesToTime(time, offsetMinutes) {
-  if (!time || !time.includes(":")) return "";
+function n(value) {
+  return Number(value || 0);
+}
 
-  const [hoursRaw, minutesRaw] = time.split(":");
+function money(value) {
+  return n(value).toLocaleString("ru-RU");
+}
+
+function percent(value, max) {
+  if (!n(max)) return 0;
+  return Math.min(100, Math.round((n(value) / n(max)) * 100));
+}
+
+function getStatus(score) {
+  if (score >= 90) return "Очень сильный день";
+  if (score >= 75) return "Сильный день";
+  if (score >= 60) return "Нормальный день";
+  if (score >= 40) return "День можно спасти";
+  return "Минимум дня";
+}
+
+function getStatusClass(score) {
+  if (score >= 90) return "excellent";
+  if (score >= 75) return "strong";
+  if (score >= 60) return "normal";
+  if (score >= 40) return "soft";
+  return "minimal";
+}
+
+function getScoreData(tasks, done) {
+  const totalPoints = tasks.reduce((sum, task) => sum + n(task.points), 0);
+  const earnedPoints = tasks.reduce((sum, task) => done[task.id] ? sum + n(task.points) : sum, 0);
+  const score = totalPoints ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+  const completedCount = tasks.filter((task) => done[task.id]).length;
+
+  return { totalPoints, earnedPoints, score, completedCount };
+}
+
+function getCategoryStats(tasks, done) {
+  return categories.map((category) => {
+    const items = tasks.filter((task) => task.category === category);
+    const max = items.reduce((sum, task) => sum + n(task.points), 0);
+    const value = items.reduce((sum, task) => done[task.id] ? sum + n(task.points) : sum, 0);
+
+    return {
+      category,
+      value,
+      max,
+      percent: max ? Math.round((value / max) * 100) : 0,
+    };
+  });
+}
+
+function getRoutineStats(done) {
+  const all = dayBlocks.flatMap((block) => block.items);
+  const completed = all.filter((item) => done[item.id]).length;
+  const total = all.length;
+
+  return {
+    completed,
+    total,
+    percent: total ? Math.round((completed / total) * 100) : 0,
+  };
+}
+
+function parseTimeToday(time, dayOffset = 0) {
+  if (!time || !String(time).includes(":")) return null;
+
+  const [hoursRaw, minutesRaw] = String(time).split(":");
   const hours = Number(hoursRaw);
   const minutes = Number(minutesRaw);
 
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
 
   const date = new Date();
   date.setHours(hours);
-  date.setMinutes(minutes + Number(offsetMinutes || 0));
+  date.setMinutes(minutes);
   date.setSeconds(0);
   date.setMilliseconds(0);
+
+  if (dayOffset) {
+    date.setDate(date.getDate() + dayOffset);
+  }
+
+  return date;
+}
+
+function formatCountdown(milliseconds) {
+  if (milliseconds <= 0) return "сейчас";
+
+  const totalMinutes = Math.ceil(milliseconds / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) return `${hours}ч ${minutes}м`;
+  return `${minutes}м`;
+}
+
+function addMinutesToTime(time, offsetMinutes) {
+  const date = parseTimeToday(time);
+  if (!date) return "";
+
+  date.setMinutes(date.getMinutes() + Number(offsetMinutes || 0));
 
   return date.toLocaleTimeString("ru-RU", {
     hour: "2-digit",
@@ -275,14 +384,9 @@ function addMinutesToTime(time, offsetMinutes) {
 
 function getMinutesFromTime(time) {
   if (!time || !time.includes(":")) return 99999;
-
-  const [hoursRaw, minutesRaw] = time.split(":");
-  const hours = Number(hoursRaw);
-  const minutes = Number(minutesRaw);
-
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return 99999;
-
-  return hours * 60 + minutes;
+  const [h, m] = time.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return 99999;
+  return h * 60 + m;
 }
 
 function getScheduledTasks(prayerToday) {
@@ -306,12 +410,6 @@ function getScheduledTasks(prayerToday) {
       };
     })
     .sort((a, b) => a.sortValue - b.sortValue);
-}
-
-function getPrayerApiDate() {
-  const d = new Date();
-
-  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
 }
 
 function normalizeGovzallaTime(value) {
@@ -361,16 +459,12 @@ function extractGovzallaPrayerTimes(html) {
     isha: findPrayerTime(text, ["Иша"]),
   };
 
-  const allFound = Object.values(byName).every(Boolean);
-
-  if (allFound) {
-    return byName;
-  }
+  if (Object.values(byName).every(Boolean)) return byName;
 
   const times = text.match(/\b\d{1,2}:\d{2}\b/g) || [];
 
   if (times.length < 6) {
-    throw new Error("Не смог найти 6 времён намаза на Govzalla");
+    throw new Error("Не смог найти времена намаза на Govzalla");
   }
 
   return {
@@ -387,186 +481,170 @@ function mergePrayerTimingsFromGovzalla(currentPrayer, timings) {
   return {
     ...defaultPrayer,
     ...currentPrayer,
-    fajr: {
-      ...currentPrayer.fajr,
-      time: timings.fajr,
-    },
-    sunrise: {
-      ...currentPrayer.sunrise,
-      time: timings.sunrise,
-    },
-    dhuhr: {
-      ...currentPrayer.dhuhr,
-      time: timings.dhuhr,
-    },
-    asr: {
-      ...currentPrayer.asr,
-      time: timings.asr,
-    },
-    maghrib: {
-      ...currentPrayer.maghrib,
-      time: timings.maghrib,
-    },
-    isha: {
-      ...currentPrayer.isha,
-      time: timings.isha,
-    },
+    fajr: { ...currentPrayer.fajr, time: timings.fajr },
+    sunrise: { ...currentPrayer.sunrise, time: timings.sunrise },
+    dhuhr: { ...currentPrayer.dhuhr, time: timings.dhuhr },
+    asr: { ...currentPrayer.asr, time: timings.asr },
+    maghrib: { ...currentPrayer.maghrib, time: timings.maghrib },
+    isha: { ...currentPrayer.isha, time: timings.isha },
   };
 }
 
-function cleanPrayerTime(value) {
-  if (!value) return "";
-
-  const match = String(value).match(/\d{1,2}:\d{2}/);
-  return match ? match[0] : "";
-}
-
-function mergePrayerTimingsFromApi(currentPrayer, timings) {
-  return {
-    ...defaultPrayer,
-    ...currentPrayer,
-    fajr: {
-      ...currentPrayer.fajr,
-      time: cleanPrayerTime(timings.Fajr),
-    },
-    sunrise: {
-      ...currentPrayer.sunrise,
-      time: cleanPrayerTime(timings.Sunrise),
-    },
-    dhuhr: {
-      ...currentPrayer.dhuhr,
-      time: cleanPrayerTime(timings.Dhuhr),
-    },
-    asr: {
-      ...currentPrayer.asr,
-      time: cleanPrayerTime(timings.Asr),
-    },
-    maghrib: {
-      ...currentPrayer.maghrib,
-      time: cleanPrayerTime(timings.Maghrib),
-    },
-    isha: {
-      ...currentPrayer.isha,
-      time: cleanPrayerTime(timings.Isha),
-    },
-  };
-}
-
-function n(value) {
-  return Number(value || 0);
-}
-
-function money(value) {
-  return n(value).toLocaleString("ru-RU");
-}
-
-function percent(value, max) {
-  if (!n(max)) return 0;
-  return Math.min(100, Math.round((n(value) / n(max)) * 100));
-}
-
-function getStatus(score) {
-  if (score >= 90) return "Отличный день";
-  if (score >= 75) return "Сильный день";
-  if (score >= 60) return "Нормальный день";
-  if (score >= 40) return "Слабый день";
-  return "День слит";
-}
-
-function getStatusClass(score) {
-  if (score >= 90) return "excellent";
-  if (score >= 75) return "strong";
-  if (score >= 60) return "normal";
-  if (score >= 40) return "weak";
-  return "failed";
-}
-
-function getScoreData(tasks, done) {
-  const totalPoints = tasks.reduce((sum, task) => sum + n(task.points), 0);
-  const earnedPoints = tasks.reduce((sum, task) => done[task.id] ? sum + n(task.points) : sum, 0);
-  const score = totalPoints ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-  const completedCount = tasks.filter((task) => done[task.id]).length;
-
-  return { totalPoints, earnedPoints, score, completedCount };
-}
-
-function getCategoryStats(tasks, done) {
-  return categories.map((category) => {
-    const items = tasks.filter((task) => task.category === category);
-    const max = items.reduce((sum, task) => sum + n(task.points), 0);
-    const value = items.reduce((sum, task) => done[task.id] ? sum + n(task.points) : sum, 0);
-
-    return {
-      category,
-      value,
-      max,
-      percent: max ? Math.round((value / max) * 100) : 0,
-    };
-  });
-}
-
-function getRoutineStats(done) {
-  const all = dayBlocks.flatMap((block) => block.items);
-  const completed = all.filter((item) => done[item.id]).length;
-  const total = all.length;
-
-  return {
-    completed,
-    total,
-    percent: total ? Math.round((completed / total) * 100) : 0,
-  };
-}
-
-function getOperatorText(score, done, tasks, focusSessions, mainGoal) {
+function getHumanOperatorText(score, done, tasks, focusSessions, mainGoal, mode) {
   const fajr = tasks.find((task) => task.id === "fajr");
   const main = tasks.find((task) => task.id === "main-task");
-  const youtube = tasks.find((task) => task.id === "no-youtube-before-main");
+
+  if (mode === "emergency") {
+    return "Сегодня не строим идеальный день. Спасаем основу: намаз, один честный шаг, сон без разрушения.";
+  }
+
+  if (mode === "recovery") {
+    return "Сегодня восстановление. Это не слабость. Держи религию, сон и один лёгкий шаг без давления.";
+  }
 
   if (fajr && !done[fajr.id]) {
-    return "Фаджр — главный маркер дня. Если он сорван, нельзя делать вид, что всё нормально. Сегодня задача — спасти остаток дня и защитить сон.";
+    return "Фаджр — главный маркер. Не ругай себя бесконечно: зафиксируй причину и спаси остаток дня.";
   }
 
   if (!mainGoal.trim()) {
-    return "Главная задача дня не выбрана. Пока нет главной задачи — день управляет тобой, а не ты днём.";
+    return "Выбери один главный шаг. Не идеальную жизнь, а один шаг, который двигает тебя к свободе.";
   }
 
   if (focusSessions < 1) {
-    return "Главная задача выбрана. Теперь нужен первый 10-минутный подход. Не думай долго — запускай фокус.";
+    return "Главная задача есть. Сделай мягкий вход: 10 минут фокуса, без геройства и без побега в телефон.";
   }
 
   if (main && !done[main.id]) {
-    return "Главная задача ещё не закрыта. Не бери новые дела. Продолжай подходами по 10 минут.";
-  }
-
-  if (youtube && !done[youtube.id]) {
-    return "YouTube до главной задачи — это не отдых, а побег. Исправляй день конкретным действием.";
+    return "Ты уже начал. Продолжай маленькими подходами. Не нужно быть роботом — нужна честная непрерывность.";
   }
 
   if (score >= 75) {
-    return "День держится. Теперь не испорти вечер. Закрой отчёт, книгу и сон после Иша.";
+    return "День держится хорошо. Теперь задача — не перегореть и спокойно закрыть вечер.";
   }
 
   if (score >= 40) {
-    return "День слабый, но не потерян. Выбери один маленький шаг и закрой его без переговоров.";
+    return "День не идеальный, но живой. Выбери минимум и закрой его без самобичевания.";
   }
 
-  return "День идёт в слив. Сейчас не нужен идеальный план. Нужен один честный шаг: религия, главная задача или сон.";
+  return "Сейчас не время ломать себя. Минимум: намаз, один шаг, убрать лишний шум, защитить сон.";
 }
 
-function buildAiPrompt({ scoreData, tasks, done, mainGoal, focusToday, prayerToday, businessToday, financeToday, report, routineDone, aiSettings }) {
+function getSmartNow(prayerToday, mainGoal, focusToday, done, tasks, businessToday, mode, tick) {
+  const now = new Date(tick || Date.now());
+
+  const prayerOrder = [
+    ["fajr", "Фаджр"],
+    ["sunrise", "Восход"],
+    ["dhuhr", "Зухр"],
+    ["asr", "Аср"],
+    ["maghrib", "Магриб"],
+    ["isha", "Иша"],
+  ];
+
+  const todayPrayers = prayerOrder
+    .map(([key, label]) => {
+      const time = prayerToday[key]?.time || "";
+      const date = parseTimeToday(time);
+      if (!date) return null;
+      return { key, label, time, date };
+    })
+    .filter(Boolean);
+
+  if (todayPrayers.length === 0) {
+    return {
+      urgency: "warning",
+      title: "Время намаза не загружено",
+      subtitle: "Открой вкладку “Намаз” и загрузи точное время.",
+      command: "Без времени намаза приложение не сможет строить точный план дня.",
+      nextLabel: "—",
+      countdown: "—",
+      actionTab: "prayer",
+    };
+  }
+
+  let nextPrayer = todayPrayers.find((item) => item.date > now);
+
+  if (!nextPrayer) {
+    const firstPrayer = todayPrayers[0];
+    nextPrayer = {
+      ...firstPrayer,
+      date: parseTimeToday(firstPrayer.time, 1),
+    };
+  }
+
+  const previousPrayer = [...todayPrayers].reverse().find((item) => item.date <= now);
+  const minutesToNext = Math.round((nextPrayer.date - now) / 60000);
+  const countdown = formatCountdown(nextPrayer.date - now);
+
+  const mainTask = tasks.find((task) => task.id === "main-task");
+
+  let urgency = "normal";
+  let title = `${nextPrayer.label} через ${countdown}`;
+  let subtitle = `Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
+  let command = "Держи день спокойно: один конкретный шаг, потом следующий.";
+  let actionTab = "today";
+
+  if (previousPrayer) {
+    subtitle = `Сейчас после ${previousPrayer.label}. Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
+  }
+
+  if (mode === "emergency") {
+    urgency = "soft";
+    command = "Аварийный режим: только основа. Не геройствуй. Намаз, один шаг, без залипания.";
+    actionTab = "routine";
+  } else if (mode === "recovery") {
+    urgency = "soft";
+    command = "Режим восстановления: меньше давления, больше порядка. Сделай лёгкий шаг и защити сон.";
+    actionTab = "routine";
+  } else if (minutesToNext <= 15) {
+    urgency = "warning";
+    command = `До ${nextPrayer.label} осталось ${countdown}. Не начинай шумные дела. Спокойно подготовься.`;
+    actionTab = "prayer";
+  } else if (minutesToNext <= 35) {
+    urgency = "soft";
+    command = `До ${nextPrayer.label} ${countdown}. Хорошее окно для короткой задачи без залипания.`;
+    actionTab = "routine";
+  } else if (!mainGoal.trim()) {
+    urgency = "soft";
+    title = "Выбери главный шаг";
+    command = "Не надо строить идеальный план. Запиши один шаг, который реально двигает тебя вперёд.";
+    actionTab = "focus";
+  } else if (Number(focusToday.sessions || 0) < 1) {
+    command = "Главный шаг выбран. Сделай 10 минут — спокойно, без давления.";
+    actionTab = "focus";
+  } else if (mainTask && !done[mainTask.id]) {
+    command = "Главная задача ещё не закрыта. Продолжай маленькими подходами.";
+    actionTab = "focus";
+  } else if (Number(businessToday.whatsappStatuses || 0) < 3) {
+    command = "Можно мягко двинуть бизнес: WhatsApp-статус или маленький шаг по WB.";
+    actionTab = "business";
+  } else {
+    command = "Основа держится. Не перегружай себя, но и не уходи в пустой шум.";
+    actionTab = "routine";
+  }
+
+  return {
+    urgency,
+    title,
+    subtitle,
+    command,
+    nextLabel: nextPrayer.label,
+    countdown,
+    actionTab,
+  };
+}
+
+function buildAiPrompt({ scoreData, tasks, done, mainGoal, focusToday, prayerToday, businessToday, financeToday, report, routineDone, aiSettings, dayMode }) {
   const closedTasks = tasks.filter((task) => done[task.id]).map((task) => `- ${task.title}`).join("\n") || "ничего не закрыто";
   const missedTasks = tasks.filter((task) => !done[task.id]).map((task) => `- ${task.title}`).join("\n") || "нет";
-
-  const prayerText = Object.values(prayerToday)
-    .map((item) => `- ${item.label}: ${item.done ? "закрыто" : "не закрыто"} ${item.time ? `(${item.time})` : ""}`)
-    .join("\n");
-
+  const prayerText = Object.values(prayerToday).map((item) => `- ${item.label}: ${item.done ? "закрыто" : "не закрыто"} ${item.time ? `(${item.time})` : ""}`).join("\n");
   const routineStats = getRoutineStats(routineDone);
 
-  return `Ты мой оператор дисциплины. Разбери день ${aiSettings.tone}.
+  return `Ты мой личный оператор. Важно: не превращай меня в робота. Разбери день ${aiSettings.tone}. Помоги честно, но по-человечески.
 
 Главная цель: ${aiSettings.goal}
 Главное правило: ${aiSettings.mainRule}
+Режим дня: ${dayModes[dayMode]?.label || dayMode}
 
 Рейтинг дня: ${scoreData.score}/100
 Баллы: ${scoreData.earnedPoints}/${scoreData.totalPoints}
@@ -611,165 +689,17 @@ ${prayerText}
 - Заметка: ${report.note || "нет"}
 
 Дай ответ в формате:
-1. Жёсткий вывод дня
-2. Главная ошибка
-3. Что завтра сделать первым
-4. Что запретить себе завтра
-5. План на завтра по шагам
-6. Короткая фраза оператора`;
+1. Честный вывод дня
+2. Что было хорошо
+3. Главная ошибка без самоуничтожения
+4. Один главный шаг завтра
+5. Что убрать/ограничить завтра
+6. План завтра: минимум / нормальный / сильный вариант
+7. Короткая фраза оператора`;
 }
 
 async function copyToClipboard(text) {
   await navigator.clipboard.writeText(text);
-}
-
-function parseTimeToday(time, dayOffset = 0) {
-  if (!time || !String(time).includes(":")) return null;
-
-  const [hoursRaw, minutesRaw] = String(time).split(":");
-  const hours = Number(hoursRaw);
-  const minutes = Number(minutesRaw);
-
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
-
-  const date = new Date();
-  date.setHours(hours);
-  date.setMinutes(minutes);
-  date.setSeconds(0);
-  date.setMilliseconds(0);
-
-  if (dayOffset) {
-    date.setDate(date.getDate() + dayOffset);
-  }
-
-  return date;
-}
-
-function formatCountdown(milliseconds) {
-  if (milliseconds <= 0) return "сейчас";
-
-  const totalMinutes = Math.ceil(milliseconds / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}ч ${minutes}м`;
-  }
-
-  return `${minutes}м`;
-}
-
-function getSmartNow(prayerToday, mainGoal, focusToday, done, tasks, businessToday, tick) {
-  const now = new Date(tick || Date.now());
-
-  const prayerOrder = [
-    ["fajr", "Фаджр"],
-    ["sunrise", "Восход"],
-    ["dhuhr", "Зухр"],
-    ["asr", "Аср"],
-    ["maghrib", "Магриб"],
-    ["isha", "Иша"],
-  ];
-
-  const todayPrayers = prayerOrder
-    .map(([key, label]) => {
-      const time = prayerToday[key]?.time || "";
-      const date = parseTimeToday(time);
-
-      if (!date) return null;
-
-      return {
-        key,
-        label,
-        time,
-        date,
-      };
-    })
-    .filter(Boolean);
-
-  if (todayPrayers.length === 0) {
-    return {
-      urgency: "warning",
-      title: "Время намаза не загружено",
-      subtitle: "Открой вкладку Намаз и нажми “Загрузить точное время”.",
-      command: "Без времени намаза приложение не сможет строить точный план дня.",
-      nextLabel: "—",
-      countdown: "—",
-      actionTab: "prayer",
-    };
-  }
-
-  let nextPrayer = todayPrayers.find((item) => item.date > now);
-
-  if (!nextPrayer) {
-    const firstPrayer = todayPrayers[0];
-
-    nextPrayer = {
-      ...firstPrayer,
-      date: parseTimeToday(firstPrayer.time, 1),
-    };
-  }
-
-  const previousPrayer = [...todayPrayers]
-    .reverse()
-    .find((item) => item.date <= now);
-
-  const minutesToNext = Math.round((nextPrayer.date - now) / 60000);
-  const countdown = formatCountdown(nextPrayer.date - now);
-
-  const mainTask = tasks.find((task) => task.id === "main-task");
-  const youtubeTask = tasks.find((task) => task.id === "no-youtube-before-main");
-
-  let urgency = "normal";
-  let title = `${nextPrayer.label} через ${countdown}`;
-  let subtitle = `Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
-  let command = "Держи день спокойно: один конкретный шаг, потом следующий.";
-  let actionTab = "today";
-
-  if (previousPrayer) {
-    subtitle = `Сейчас после ${previousPrayer.label}. Следующий намаз: ${nextPrayer.label} в ${nextPrayer.time}`;
-  }
-
-  if (minutesToNext <= 15) {
-    urgency = "danger";
-    command = `До ${nextPrayer.label} осталось ${countdown}. Не начинай YouTube и тяжёлые дела. Подготовься к намазу.`;
-    actionTab = "prayer";
-  } else if (minutesToNext <= 35) {
-    urgency = "warning";
-    command = `До ${nextPrayer.label} осталось ${countdown}. Делай только короткую задачу без залипания.`;
-    actionTab = "routine";
-  } else if (!mainGoal.trim()) {
-    urgency = "warning";
-    title = "Выбери главный удар дня";
-    command = "Пока главная задача не выбрана, день будет расплываться. Запиши одну главную задачу.";
-    actionTab = "focus";
-  } else if (Number(focusToday.sessions || 0) < 1) {
-    command = "Главная задача выбрана. Запусти первый фокус на 10 минут.";
-    actionTab = "focus";
-  } else if (mainTask && !done[mainTask.id]) {
-    command = "Главная задача ещё не закрыта. Продолжай подходами по 10 минут.";
-    actionTab = "focus";
-  } else if (youtubeTask && !done[youtubeTask.id]) {
-    urgency = "warning";
-    command = "YouTube ещё нельзя. Сначала закрепи день: главная задача, бизнес или отчёт.";
-    actionTab = "today";
-  } else if (Number(businessToday.whatsappStatuses || 0) < 3) {
-    command = "Хорошее окно для бизнеса: добей WhatsApp-статусы или мини-шаг по WB.";
-    actionTab = "business";
-  } else {
-    command = "Основа дня держится. Следи за следующим намазом и не ломай вечер.";
-    actionTab = "routine";
-  }
-
-  return {
-    urgency,
-    title,
-    subtitle,
-    command,
-    nextLabel: nextPrayer.label,
-    countdown,
-    actionTab,
-  };
 }
 
 function App() {
@@ -782,20 +712,20 @@ function App() {
   const [focusByDate, setFocusByDate] = useState(() => loadJson(keys.focus, {}));
   const [routineByDate, setRoutineByDate] = useState(() => loadJson(keys.routine, {}));
   const [prayerByDate, setPrayerByDate] = useState(() => loadJson(keys.prayer, {}));
-  const [prayerSettings, setPrayerSettings] = useState(() => loadJson(keys.prayerSettings, defaultPrayerSettings));
   const [businessByDate, setBusinessByDate] = useState(() => loadJson(keys.business, {}));
   const [financeByDate, setFinanceByDate] = useState(() => loadJson(keys.financeDays, {}));
   const [financeSettings, setFinanceSettings] = useState(() => loadJson(keys.financeSettings, defaultFinanceSettings));
   const [reportsByDate, setReportsByDate] = useState(() => loadJson(keys.reports, {}));
   const [history, setHistory] = useState(() => loadJson(keys.history, []));
   const [aiSettings, setAiSettings] = useState(() => loadJson(keys.aiSettings, defaultAiSettings));
+  const [dayModesByDate, setDayModesByDate] = useState(() => loadJson(keys.dayModes, {}));
   const [newTask, setNewTask] = useState({ title: "", category: "Дисциплина", points: 10 });
   const [importText, setImportText] = useState("");
-  const [prayerLoading, setPrayerLoading] = useState(false);
-  const [prayerError, setPrayerError] = useState("");
   const [focusRunning, setFocusRunning] = useState(false);
   const [focusSeconds, setFocusSeconds] = useState(FOCUS_DURATION);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [prayerLoading, setPrayerLoading] = useState(false);
+  const [prayerError, setPrayerError] = useState("");
 
   const done = doneByDate[todayKey] || {};
   const mainGoal = mainGoals[todayKey] || "";
@@ -805,6 +735,7 @@ function App() {
   const businessToday = { ...emptyBusiness, ...(businessByDate[todayKey] || {}) };
   const financeToday = { ...emptyFinanceDay, ...(financeByDate[todayKey] || {}) };
   const report = { ...emptyReport, ...(reportsByDate[todayKey] || {}) };
+  const dayMode = dayModesByDate[todayKey] || "normal";
 
   useEffect(() => saveJson(keys.tasks, tasks), [tasks]);
   useEffect(() => saveJson(keys.doneByDate, doneByDate), [doneByDate]);
@@ -812,13 +743,18 @@ function App() {
   useEffect(() => saveJson(keys.focus, focusByDate), [focusByDate]);
   useEffect(() => saveJson(keys.routine, routineByDate), [routineByDate]);
   useEffect(() => saveJson(keys.prayer, prayerByDate), [prayerByDate]);
-  useEffect(() => saveJson(keys.prayerSettings, prayerSettings), [prayerSettings]);
   useEffect(() => saveJson(keys.business, businessByDate), [businessByDate]);
   useEffect(() => saveJson(keys.financeDays, financeByDate), [financeByDate]);
   useEffect(() => saveJson(keys.financeSettings, financeSettings), [financeSettings]);
   useEffect(() => saveJson(keys.reports, reportsByDate), [reportsByDate]);
   useEffect(() => saveJson(keys.history, history), [history]);
   useEffect(() => saveJson(keys.aiSettings, aiSettings), [aiSettings]);
+  useEffect(() => saveJson(keys.dayModes, dayModesByDate), [dayModesByDate]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!focusRunning) return;
@@ -839,14 +775,10 @@ function App() {
     alert("Фокус-подход завершён.");
   }, [focusRunning, focusSeconds]);
 
-  useEffect(() => {
-    const timer = setInterval(() => setNowTick(Date.now()), 30000);
-    return () => clearInterval(timer);
-  }, []);
-
   const scoreData = useMemo(() => getScoreData(tasks, done), [tasks, done]);
   const categoryStats = useMemo(() => getCategoryStats(tasks, done), [tasks, done]);
   const routineStats = useMemo(() => getRoutineStats(routineDone), [routineDone]);
+  const scheduledTasks = useMemo(() => getScheduledTasks(prayerToday), [prayerToday]);
 
   const nowPanel = useMemo(() => {
     return getSmartNow(
@@ -856,17 +788,10 @@ function App() {
       done,
       tasks,
       businessToday,
+      dayMode,
       nowTick
     );
-  }, [prayerToday, mainGoal, focusToday, done, tasks, businessToday, nowTick]);
-
-  useEffect(() => {
-    if (!prayerSettings.autoLoad) return;
-    if (prayerToday.fajr?.time) return;
-
-    fetchPrayerTimes({ silent: true });
-    // autoLoadPrayerEffect
-  }, [todayKey, prayerSettings.autoLoad]);
+  }, [prayerToday, mainGoal, focusToday, done, tasks, businessToday, dayMode, nowTick]);
 
   const aiPrompt = useMemo(() => buildAiPrompt({
     scoreData,
@@ -880,7 +805,8 @@ function App() {
     report,
     routineDone,
     aiSettings,
-  }), [scoreData, tasks, done, mainGoal, focusToday, prayerToday, businessToday, financeToday, report, routineDone, aiSettings]);
+    dayMode,
+  }), [scoreData, tasks, done, mainGoal, focusToday, prayerToday, businessToday, financeToday, report, routineDone, aiSettings, dayMode]);
 
   const backupObject = useMemo(() => ({
     app: "operator-svobody",
@@ -898,6 +824,7 @@ function App() {
     reportsByDate,
     history,
     aiSettings,
+    dayModesByDate,
   }), [
     tasks,
     doneByDate,
@@ -911,6 +838,7 @@ function App() {
     reportsByDate,
     history,
     aiSettings,
+    dayModesByDate,
   ]);
 
   const backupText = useMemo(() => JSON.stringify(backupObject, null, 2), [backupObject]);
@@ -928,6 +856,13 @@ function App() {
 
     return { count: last.length, avg, focus, wb, outside };
   }, [history]);
+
+  function updateDayMode(value) {
+    setDayModesByDate((prev) => ({
+      ...prev,
+      [todayKey]: value,
+    }));
+  }
 
   function toggleTask(id) {
     setDoneByDate((prev) => ({
@@ -947,44 +882,6 @@ function App() {
         [id]: true,
       },
     }));
-  }
-
-  function incrementBusiness(field) {
-    setBusinessByDate((prev) => {
-      const current = {
-        ...emptyBusiness,
-        ...(prev[todayKey] || {}),
-      };
-
-      return {
-        ...prev,
-        [todayKey]: {
-          ...current,
-          [field]: String(n(current[field]) + 1),
-        },
-      };
-    });
-  }
-
-  function quickPrayerDone(key) {
-    setPrayerByDate((prev) => {
-      const current = {
-        ...defaultPrayer,
-        ...(prev[todayKey] || {}),
-      };
-
-      return {
-        ...prev,
-        [todayKey]: {
-          ...current,
-          [key]: {
-            ...current[key],
-            done: true,
-            time: current[key].time || getTimeNow(),
-          },
-        },
-      };
-    });
   }
 
   function toggleRoutine(id) {
@@ -1037,11 +934,43 @@ function App() {
     setFocusSeconds(FOCUS_DURATION);
   }
 
-  function updatePrayerSettings(field, value) {
-    setPrayerSettings((prev) => ({
-      ...prev,
-      [field]: field === "autoLoad" ? Boolean(value) : value,
-    }));
+  function updatePrayer(key, field, value) {
+    setPrayerByDate((prev) => {
+      const current = { ...defaultPrayer, ...(prev[todayKey] || {}) };
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [key]: {
+            ...current[key],
+            [field]: value,
+          },
+        },
+      };
+    });
+  }
+
+  function togglePrayer(key) {
+    updatePrayer(key, "done", !prayerToday[key].done);
+  }
+
+  function quickPrayerDone(key) {
+    setPrayerByDate((prev) => {
+      const current = { ...defaultPrayer, ...(prev[todayKey] || {}) };
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          [key]: {
+            ...current[key],
+            done: true,
+            time: current[key].time || getTimeNow(),
+          },
+        },
+      };
+    });
   }
 
   async function fetchPrayerTimes(options = {}) {
@@ -1063,9 +992,7 @@ function App() {
     try {
       for (const source of sources) {
         try {
-          const response = await fetch(source, {
-            cache: "no-store",
-          });
+          const response = await fetch(source, { cache: "no-store" });
 
           if (!response.ok) {
             throw new Error(`Источник не ответил: ${source}`);
@@ -1080,10 +1007,7 @@ function App() {
           const timings = extractGovzallaPrayerTimes(html);
 
           setPrayerByDate((prev) => {
-            const current = {
-              ...defaultPrayer,
-              ...(prev[todayKey] || {}),
-            };
+            const current = { ...defaultPrayer, ...(prev[todayKey] || {}) };
 
             return {
               ...prev,
@@ -1091,9 +1015,7 @@ function App() {
             };
           });
 
-          if (!silent) {
-            alert("Точное время Govzalla загружено.");
-          }
+          if (!silent) alert("Точное время намаза загружено.");
 
           setPrayerLoading(false);
           return;
@@ -1105,35 +1027,26 @@ function App() {
       throw lastError || new Error("Govzalla не ответил");
     } catch (error) {
       console.log(error);
-      setPrayerError("Не получилось загрузить точное время Govzalla. Проверь интернет и попробуй ещё раз.");
+      setPrayerError("Не получилось загрузить точное время. Проверь интернет и попробуй ещё раз.");
 
-      if (!silent) {
-        alert("Не получилось загрузить точное время Govzalla.");
-      }
+      if (!silent) alert("Не получилось загрузить точное время.");
     } finally {
       setPrayerLoading(false);
     }
   }
 
-  function updatePrayer(key, field, value) {
-    setPrayerByDate((prev) => {
-      const current = { ...defaultPrayer, ...(prev[todayKey] || {}) };
+  function incrementBusiness(field) {
+    setBusinessByDate((prev) => {
+      const current = { ...emptyBusiness, ...(prev[todayKey] || {}) };
 
       return {
         ...prev,
         [todayKey]: {
           ...current,
-          [key]: {
-            ...current[key],
-            [field]: value,
-          },
+          [field]: String(n(current[field]) + 1),
         },
       };
     });
-  }
-
-  function togglePrayer(key) {
-    updatePrayer(key, "done", !prayerToday[key].done);
   }
 
   function updateBusiness(field, value) {
@@ -1248,6 +1161,7 @@ function App() {
     setBusinessByDate((prev) => ({ ...prev, [todayKey]: emptyBusiness }));
     setFinanceByDate((prev) => ({ ...prev, [todayKey]: emptyFinanceDay }));
     setReportsByDate((prev) => ({ ...prev, [todayKey]: emptyReport }));
+    setDayModesByDate((prev) => ({ ...prev, [todayKey]: "normal" }));
   }
 
   function closeDay() {
@@ -1267,6 +1181,7 @@ function App() {
       business: businessToday,
       finance: financeToday,
       report,
+      dayMode,
     };
 
     setHistory((prev) => {
@@ -1294,7 +1209,7 @@ function App() {
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `operator-svobody-v8-${todayKey}.json`;
+    link.download = `operator-svobody-v9-${todayKey}.json`;
     link.click();
 
     URL.revokeObjectURL(url);
@@ -1313,13 +1228,13 @@ function App() {
       setFocusByDate(data.focusByDate || {});
       setRoutineByDate(data.routineByDate || {});
       setPrayerByDate(data.prayerByDate || {});
-      setPrayerSettings(data.prayerSettings || defaultPrayerSettings);
       setBusinessByDate(data.businessByDate || {});
       setFinanceByDate(data.financeByDate || {});
       setFinanceSettings(data.financeSettings || defaultFinanceSettings);
       setReportsByDate(data.reportsByDate || {});
       setHistory(Array.isArray(data.history) ? data.history : []);
       setAiSettings(data.aiSettings || defaultAiSettings);
+      setDayModesByDate(data.dayModesByDate || {});
 
       alert("Данные восстановлены.");
     } catch {
@@ -1335,6 +1250,8 @@ function App() {
       alert("Не получилось скопировать. Выдели текст вручную.");
     }
   }
+
+  const modeData = dayModes[dayMode] || dayModes.normal;
 
   return (
     <main className="app">
@@ -1375,10 +1292,10 @@ function App() {
                     {getStatus(scoreData.score)}
                   </p>
 
-                  <h2>{getOperatorText(scoreData.score, done, tasks, focusToday.sessions || 0, mainGoal)}</h2>
+                  <h2>{getHumanOperatorText(scoreData.score, done, tasks, focusToday.sessions || 0, mainGoal, dayMode)}</h2>
 
                   <p className="command">
-                    Команда дня: YouTube запрещён до выполнения главной задачи.
+                    Сегодня не надо быть роботом. Нужно держать направление и делать следующий честный шаг.
                   </p>
                 </div>
               </div>
@@ -1390,6 +1307,25 @@ function App() {
               <p className="miniInfo">
                 Закрыто задач: {scoreData.completedCount} из {tasks.length}. Набрано: {scoreData.earnedPoints} из {scoreData.totalPoints} баллов.
               </p>
+            </section>
+
+            <section className="panel modePanel">
+              <p className="label">Режим дня</p>
+              <h2>{modeData.title}</h2>
+              <p>{modeData.description}</p>
+
+              <div className="modeGrid">
+                {Object.entries(dayModes).map(([key, item]) => (
+                  <button
+                    key={key}
+                    className={`modeButton ${dayMode === key ? "active" : ""}`}
+                    onClick={() => updateDayMode(key)}
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{item.minimum} мин. действий минимум</small>
+                  </button>
+                ))}
+              </div>
             </section>
 
             <section className={`panel nowPanel ${nowPanel.urgency}`}>
@@ -1413,25 +1349,30 @@ function App() {
                 </div>
               </div>
             </section>
-            <section className="quickGrid">
-              <div className="quickCard">
-                <p className="label">Главная задача</p>
-                <strong>{mainGoal.trim() || "Не выбрана"}</strong>
+
+            <section className="widgetStrip">
+              <div className="miniWidget">
+                <span>Намаз</span>
+                <strong>{nowPanel.nextLabel}</strong>
+                <small>{nowPanel.countdown}</small>
               </div>
 
-              <div className="quickCard">
-                <p className="label">Фокус</p>
-                <strong>{focusToday.sessions || 0} подходов</strong>
+              <div className="miniWidget">
+                <span>Фокус</span>
+                <strong>{focusToday.sessions || 0}</strong>
+                <small>подходов</small>
               </div>
 
-              <div className="quickCard">
-                <p className="label">Режим</p>
+              <div className="miniWidget">
+                <span>Режим</span>
                 <strong>{routineStats.completed}/{routineStats.total}</strong>
+                <small>закрыто</small>
               </div>
 
-              <div className="quickCard">
-                <p className="label">Бизнес</p>
-                <strong>{businessToday.wbOrders || 0} WB · {businessToday.outsideOrders || 0} вне WB</strong>
+              <div className="miniWidget">
+                <span>Бизнес</span>
+                <strong>{businessToday.wbOrders || 0}/{businessToday.outsideOrders || 0}</strong>
+                <small>WB / вне WB</small>
               </div>
             </section>
 
@@ -1490,18 +1431,16 @@ function App() {
                 </div>
 
                 <strong>
-                  {getScheduledTasks(prayerToday).filter((item) => routineDone[item.id]).length}/
-                  {getScheduledTasks(prayerToday).length}
+                  {scheduledTasks.filter((item) => routineDone[item.id]).length}/{scheduledTasks.length}
                 </strong>
               </div>
 
               <p className="backupHint">
-                Задачи “после Фаджра”, “после восхода” и “после Иша” считаются от времени,
-                которое ты укажешь во вкладке “Намаз”.
+                Задачи после Фаджра, восхода и Иша считаются от точного времени намаза.
               </p>
 
               <div className="scheduleList">
-                {getScheduledTasks(prayerToday).map((item) => (
+                {scheduledTasks.map((item) => (
                   <button
                     key={item.id}
                     className={`scheduleItem ${routineDone[item.id] ? "done" : ""}`}
@@ -1514,11 +1453,31 @@ function App() {
                       <small>{item.hint}</small>
                     </span>
 
-                    <span className="checkBox">
-                      {routineDone[item.id] ? "✓" : ""}
-                    </span>
+                    <span className="checkBox">{routineDone[item.id] ? "✓" : ""}</span>
                   </button>
                 ))}
+              </div>
+            </section>
+
+            <section className="quickGrid">
+              <div className="quickCard">
+                <p className="label">Главная задача</p>
+                <strong>{mainGoal.trim() || "Не выбрана"}</strong>
+              </div>
+
+              <div className="quickCard">
+                <p className="label">Фокус</p>
+                <strong>{focusToday.sessions || 0} подходов</strong>
+              </div>
+
+              <div className="quickCard">
+                <p className="label">Режим</p>
+                <strong>{routineStats.completed}/{routineStats.total}</strong>
+              </div>
+
+              <div className="quickCard">
+                <p className="label">Бизнес</p>
+                <strong>{businessToday.wbOrders || 0} WB · {businessToday.outsideOrders || 0} вне WB</strong>
               </div>
             </section>
 
@@ -1561,6 +1520,45 @@ function App() {
           </>
         )}
 
+        {activeTab === "widgets" && (
+          <section className="panel">
+            <p className="label">Внутренние виджеты</p>
+            <h2>Быстрый экран как на iPhone</h2>
+
+            <p className="backupHint">
+              Это не системные iOS-виджеты, а удобный экран внутри приложения. Настоящие виджеты можно будет сделать позже в нативной iOS-версии.
+            </p>
+
+            <div className="widgetBoard">
+              <div className="largeWidget prayerWidget">
+                <span>Следующий намаз</span>
+                <strong>{nowPanel.nextLabel}</strong>
+                <p>{nowPanel.countdown}</p>
+                <small>{nowPanel.subtitle}</small>
+              </div>
+
+              <div className="largeWidget">
+                <span>Задача сейчас</span>
+                <strong>{nowPanel.title}</strong>
+                <p>{nowPanel.command}</p>
+              </div>
+
+              <div className="largeWidget">
+                <span>Главная задача</span>
+                <strong>{mainGoal || "Не выбрана"}</strong>
+                <button className="softButton" onClick={() => setActiveTab("focus")}>Открыть фокус</button>
+              </div>
+
+              <div className="largeWidget">
+                <span>Свобода</span>
+                <strong>{percent(financeSettings.debtSavedRub, debtGoalRub)}%</strong>
+                <p>долг закрыт</p>
+                <small>резерв: {percent(financeSettings.reserveSaved, financeSettings.reserveGoal)}%</small>
+              </div>
+            </div>
+          </section>
+        )}
+
         {activeTab === "focus" && (
           <section className="panel focusPanel">
             <p className="label">Фокус</p>
@@ -1583,7 +1581,7 @@ function App() {
 
               <div className="focusInfo">
                 <strong>Подходов сегодня: {focusToday.sessions || 0}</strong>
-                <p>Если задача непонятная — не уходи в YouTube. Запусти 10 минут.</p>
+                <p>Не надо быть роботом. Достаточно спокойно войти в задачу на 10 минут.</p>
 
                 <div className="focusProgress">
                   <div
@@ -1657,16 +1655,16 @@ function App() {
         {activeTab === "prayer" && (
           <section className="panel">
             <p className="label">Намаз</p>
-            <h2>Основа дня</h2>
+            <h2>Точное время и основа дня</h2>
 
             <p className="backupHint">
-              Время намаза берётся из Govzalla — источника, который совпадает с твоим IslamApp для Грозного. Если нужно, любое время можно поправить вручную.
+              Время берётся из Govzalla — источника, который совпадает с твоим IslamApp для Грозного. Любое время можно поправить вручную.
             </p>
 
             <div className="autoPrayerBox">
               <div>
-                <strong>{prayerSettings.city}, {prayerSettings.country}</strong>
-                <small>Источник: Govzalla · ориентир: IslamApp</small>
+                <strong>Источник: Govzalla</strong>
+                <small>ориентир: IslamApp</small>
               </div>
 
               <button className="closeDay noTop" onClick={() => fetchPrayerTimes()} disabled={prayerLoading}>
@@ -1675,53 +1673,6 @@ function App() {
             </div>
 
             {prayerError ? <p className="errorText">{prayerError}</p> : null}
-
-            <div className="reportGrid prayerSettingsGrid">
-              <label>
-                Город
-                <input
-                  value={prayerSettings.city}
-                  onChange={(event) => updatePrayerSettings("city", event.target.value)}
-                />
-              </label>
-
-              <label>
-                Страна
-                <input
-                  value={prayerSettings.country}
-                  onChange={(event) => updatePrayerSettings("country", event.target.value)}
-                />
-              </label>
-
-              <label>
-                Метод расчёта
-                <input
-                  type="number"
-                  value={prayerSettings.method}
-                  onChange={(event) => updatePrayerSettings("method", event.target.value)}
-                />
-              </label>
-
-              <label>
-                Аср
-                <select
-                  value={prayerSettings.school}
-                  onChange={(event) => updatePrayerSettings("school", event.target.value)}
-                >
-                  <option value="0">Шафии / стандарт</option>
-                  <option value="1">Ханафи</option>
-                </select>
-              </label>
-
-              <label className="toggleLine">
-                <input
-                  type="checkbox"
-                  checked={Boolean(prayerSettings.autoLoad)}
-                  onChange={(event) => updatePrayerSettings("autoLoad", event.target.checked)}
-                />
-                Автозагрузка
-              </label>
-            </div>
 
             <div className="prayerList">
               {Object.entries(prayerToday).map(([key, item]) => (
@@ -1787,39 +1738,20 @@ function App() {
               ))}
             </div>
 
-            <label className="fullLabel">
-              Главный бизнес-шаг сегодня
-              <textarea
-                value={businessToday.mainAction}
-                onChange={(event) => updateBusiness("mainAction", event.target.value)}
-                placeholder="Что сделал для роста продаж?"
-              />
-            </label>
-
-            <label className="fullLabel">
-              Что мешает продажам?
-              <textarea
-                value={businessToday.obstacle}
-                onChange={(event) => updateBusiness("obstacle", event.target.value)}
-                placeholder="Карточка, отзывы, цена, фото, трафик, деньги?"
-              />
-            </label>
-
-            <label className="fullLabel">
-              Итог по бизнесу
-              <textarea
-                value={businessToday.result}
-                onChange={(event) => updateBusiness("result", event.target.value)}
-              />
-            </label>
-
-            <label className="fullLabel">
-              Завтрашний бизнес-шаг
-              <textarea
-                value={businessToday.tomorrowAction}
-                onChange={(event) => updateBusiness("tomorrowAction", event.target.value)}
-              />
-            </label>
+            {[
+              ["mainAction", "Главный бизнес-шаг сегодня"],
+              ["obstacle", "Что мешает продажам?"],
+              ["result", "Итог по бизнесу"],
+              ["tomorrowAction", "Завтрашний бизнес-шаг"],
+            ].map(([field, label]) => (
+              <label className="fullLabel" key={field}>
+                {label}
+                <textarea
+                  value={businessToday[field]}
+                  onChange={(event) => updateBusiness(field, event.target.value)}
+                />
+              </label>
+            ))}
           </section>
         )}
 
@@ -2040,7 +1972,7 @@ function App() {
             <h2>Собрать текст для ChatGPT</h2>
 
             <p className="backupHint">
-              Это бесплатный вариант AI: приложение собирает твои данные, ты копируешь текст и вставляешь его в ChatGPT.
+              Приложение собирает данные, а ты вставляешь текст в ChatGPT. Важно: разбор должен помогать, а не превращать тебя в робота.
             </p>
 
             <div className="reportGrid">
@@ -2182,9 +2114,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
-
-

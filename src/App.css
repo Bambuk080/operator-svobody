@@ -1,12 +1,38 @@
-﻿.app {
+﻿:root {
+  --bg: #f6f7f2;
+  --bg2: #eef2ea;
+  --card: rgba(255, 255, 255, 0.74);
+  --cardStrong: rgba(255, 255, 255, 0.92);
+  --text: #172018;
+  --muted: rgba(23, 32, 24, 0.62);
+  --line: rgba(23, 32, 24, 0.08);
+  --green: #5f9f73;
+  --greenSoft: #dceee1;
+  --sand: #e7d7b1;
+  --sandStrong: #b9974f;
+  --blue: #dfeaf2;
+  --rose: #f1ded8;
+  --shadow: 0 20px 70px rgba(36, 48, 39, 0.12);
+  --shadowSoft: 0 10px 30px rgba(36, 48, 39, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+}
+
+.app {
   min-height: 100vh;
   padding: 18px;
-  padding-bottom: 128px;
-  color: #f5f7fb;
+  padding-bottom: 132px;
+  color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(90, 255, 190, 0.18), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(255, 201, 92, 0.12), transparent 32%),
-    linear-gradient(180deg, #07100d 0%, #07090d 42%, #05070a 100%);
+    radial-gradient(circle at top left, rgba(95, 159, 115, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(231, 215, 177, 0.26), transparent 34%),
+    linear-gradient(180deg, #fbfbf7 0%, var(--bg) 46%, var(--bg2) 100%);
 }
 
 .shell {
@@ -20,11 +46,12 @@
   gap: 16px;
   align-items: flex-start;
   margin-bottom: 14px;
+  animation: softIn 0.45s ease both;
 }
 
 .label {
   margin: 0 0 8px;
-  color: #8df7c1;
+  color: var(--green);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -49,22 +76,26 @@ h2 {
 .emptyText,
 .backupHint,
 .historyGoal,
-.focusInfo p {
-  color: rgba(255, 255, 255, 0.68);
+.focusInfo p,
+.nowText p,
+.modePanel p {
+  color: var(--muted);
   line-height: 1.6;
 }
 
 .reset,
 .closeDay,
-.taskForm button {
+.taskForm button,
+.softButton {
   border: 0;
   border-radius: 999px;
   padding: 11px 17px;
-  color: #07100b;
-  background: #8df7c1;
+  color: #fff;
+  background: var(--green);
   font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(141, 247, 193, 0.14);
+  box-shadow: 0 10px 24px rgba(95, 159, 115, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
 }
 
 .reset:active,
@@ -72,7 +103,11 @@ h2 {
 .taskForm button:active,
 .ghostButton:active,
 .taskCard:active,
-.dayPlanItem:active {
+.dayPlanItem:active,
+.actionButton:active,
+.modeButton:active,
+.scheduleItem:active,
+.softButton:active {
   transform: scale(0.985);
 }
 
@@ -86,10 +121,11 @@ h2 {
   padding: 8px;
   overflow-x: auto;
   border-radius: 999px;
-  background: rgba(7, 9, 13, 0.8);
+  background: rgba(255, 255, 255, 0.64);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadowSoft);
 }
 
 .tabBar::-webkit-scrollbar {
@@ -101,41 +137,48 @@ h2 {
   border: 0;
   border-radius: 999px;
   padding: 10px 14px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(23, 32, 24, 0.58);
   background: transparent;
   font-weight: 950;
   cursor: pointer;
   white-space: nowrap;
+  transition: 0.18s ease;
 }
 
 .tabBar button.active {
-  color: #07100b;
-  background: #8df7c1;
+  color: #fff;
+  background: var(--green);
+  box-shadow: 0 8px 22px rgba(95, 159, 115, 0.18);
 }
 
 .panel {
   margin: 0 auto 14px;
   padding: 20px;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+  border-radius: 30px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: var(--shadow);
+  animation: softIn 0.38s ease both;
 }
 
 .hero {
   position: relative;
   overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(95, 159, 115, 0.16), transparent 28%),
+    var(--cardStrong);
 }
 
 .hero::after {
   content: "";
   position: absolute;
-  inset: auto -80px -120px auto;
-  width: 260px;
-  height: 260px;
+  inset: auto -90px -130px auto;
+  width: 270px;
+  height: 270px;
   border-radius: 50%;
-  background: rgba(141, 247, 193, 0.13);
+  background: rgba(95, 159, 115, 0.12);
   filter: blur(12px);
 }
 
@@ -155,9 +198,10 @@ h2 {
   position: relative;
   border-radius: 50%;
   background:
-    linear-gradient(#090d12, #090d12) padding-box,
-    conic-gradient(from 180deg, #8df7c1, #f9cf72, #ff6b6b, #8df7c1) border-box;
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    conic-gradient(from 180deg, var(--green), var(--sandStrong), var(--green)) border-box;
   border: 7px solid transparent;
+  box-shadow: inset 0 0 0 1px var(--line), 0 18px 34px rgba(95, 159, 115, 0.12);
 }
 
 .circle {
@@ -175,7 +219,7 @@ h2 {
 .timerCircle small {
   position: absolute;
   bottom: 34px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
   font-weight: 850;
 }
 
@@ -185,23 +229,23 @@ h2 {
   margin: 0 0 12px;
   padding: 8px 12px;
   border-radius: 999px;
-  color: #111;
+  color: var(--text);
   font-size: 13px;
   font-weight: 1000;
 }
 
-.excellent { background: #8df7c1; }
-.strong { background: #b8f78d; }
-.normal { background: #f9cf72; }
-.weak { background: #ffb36b; }
-.failed { background: #ff6b6b; }
+.excellent { background: #dceee1; }
+.strong { background: #e7f2d8; }
+.normal { background: #efe5c8; }
+.soft { background: #e6edf1; }
+.minimal { background: #f1e4d8; }
 
 .progress,
 .smallProgress,
 .focusProgress {
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(23, 32, 24, 0.08);
 }
 
 .progress {
@@ -216,7 +260,7 @@ h2 {
 .focusProgressFill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #8df7c1, #f9cf72);
+  background: linear-gradient(90deg, var(--green), var(--sandStrong));
   transition: width 0.45s ease;
 }
 
@@ -230,7 +274,9 @@ h2 {
 .quickGrid,
 .stats,
 .moneyGrid,
-.dayPlanGrid {
+.dayPlanGrid,
+.widgetBoard,
+.widgetStrip {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
@@ -244,16 +290,58 @@ h2 {
 .quickCard,
 .statCard,
 .moneyCard,
-.dayBlock {
+.dayBlock,
+.miniWidget,
+.largeWidget {
   padding: 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.045);
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 8px 24px rgba(36, 48, 39, 0.06);
 }
 
-.quickCard strong {
+.quickCard strong,
+.miniWidget strong,
+.largeWidget strong {
   display: block;
   line-height: 1.35;
+}
+
+.miniWidget {
+  min-height: 104px;
+  display: grid;
+  align-content: space-between;
+}
+
+.miniWidget span,
+.largeWidget span {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.miniWidget strong {
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.largeWidget {
+  min-height: 190px;
+  display: grid;
+  align-content: space-between;
+}
+
+.largeWidget strong {
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.prayerWidget {
+  background:
+    radial-gradient(circle at top right, rgba(95, 159, 115, 0.18), transparent 34%),
+    rgba(255, 255, 255, 0.72);
 }
 
 .statTop {
@@ -271,8 +359,10 @@ h2 {
 .prayerItem small,
 .moneyCard small,
 .dayBlockHead small,
-.focusLog small {
-  color: rgba(255, 255, 255, 0.62);
+.focusLog small,
+.miniWidget small,
+.largeWidget small {
+  color: var(--muted);
 }
 
 .smallProgress {
@@ -283,34 +373,37 @@ h2 {
 .settingsList,
 .historyList,
 .prayerList,
-.dayBlockItems {
+.dayBlockItems,
+.scheduleList {
   display: grid;
   gap: 10px;
   margin-top: 16px;
 }
 
 .taskCard,
-.dayPlanItem {
+.dayPlanItem,
+.scheduleItem {
   width: 100%;
   display: grid;
   grid-template-columns: 34px 1fr;
   gap: 12px;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
   padding: 14px;
-  color: #fff;
+  color: var(--text);
   text-align: left;
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.56);
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease, border 0.15s ease;
 }
 
 .taskCard.done,
 .dayPlanItem.done,
-.prayerItem.done {
-  border-color: rgba(141, 247, 193, 0.42);
-  background: rgba(141, 247, 193, 0.13);
+.prayerItem.done,
+.scheduleItem.done {
+  border-color: rgba(95, 159, 115, 0.28);
+  background: rgba(220, 238, 225, 0.8);
 }
 
 .checkBox {
@@ -319,15 +412,15 @@ h2 {
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 10px;
-  color: #07100b;
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  color: #fff;
+  background: rgba(23, 32, 24, 0.08);
   font-weight: 1000;
   cursor: pointer;
 }
 
 .done .checkBox {
-  background: #8df7c1;
+  background: var(--green);
 }
 
 .taskCard strong {
@@ -337,7 +430,7 @@ h2 {
 
 .taskCard small,
 .historyItem small {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
 }
 
 .reportGrid {
@@ -351,7 +444,7 @@ h2 {
 .fullLabel {
   display: grid;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(23, 32, 24, 0.72);
   font-size: 14px;
   font-weight: 850;
 }
@@ -364,24 +457,20 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
   outline: none;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 13px 13px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.065);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.72);
   font-size: 16px;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(141, 247, 193, 0.55);
-  box-shadow: 0 0 0 3px rgba(141, 247, 193, 0.08);
-}
-
-select option {
-  color: #111;
+  border-color: rgba(95, 159, 115, 0.55);
+  box-shadow: 0 0 0 4px rgba(95, 159, 115, 0.08);
 }
 
 textarea {
@@ -401,15 +490,19 @@ textarea {
   margin-top: 18px;
 }
 
+.noTop {
+  margin-top: 0;
+}
+
 .historyItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--line);
 }
 
 .historyItem strong {
@@ -426,11 +519,11 @@ textarea {
 
 .ghostButton {
   margin-top: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--line);
   border-radius: 999px;
   padding: 10px 16px;
-  color: rgba(255, 255, 255, 0.75);
-  background: transparent;
+  color: rgba(23, 32, 24, 0.74);
+  background: rgba(255, 255, 255, 0.6);
   cursor: pointer;
 }
 
@@ -443,8 +536,8 @@ textarea {
   border: 0;
   border-radius: 999px;
   padding: 10px 16px;
-  color: #111;
-  background: #ff6b6b;
+  color: var(--text);
+  background: var(--rose);
   font-weight: 900;
   cursor: pointer;
 }
@@ -469,8 +562,8 @@ textarea {
   gap: 8px;
   padding: 12px;
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .taskMeta {
@@ -480,21 +573,59 @@ textarea {
 }
 
 .deleteButton {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.045);
+  color: rgba(23, 32, 24, 0.72);
+  background: rgba(255, 255, 255, 0.62);
   font-size: 24px;
   cursor: pointer;
 }
 
 .deleteButton:hover {
-  color: #111;
-  background: #ff6b6b;
+  background: var(--rose);
+}
+
+.modePanel {
+  background:
+    radial-gradient(circle at top right, rgba(231, 215, 177, 0.34), transparent 32%),
+    var(--card);
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.modeButton,
+.actionButton {
+  display: grid;
+  gap: 4px;
+  min-height: 84px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 14px;
+  color: var(--text);
+  text-align: left;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.modeButton.active {
+  background: var(--greenSoft);
+  border-color: rgba(95, 159, 115, 0.28);
+}
+
+.modeButton small,
+.actionButton small {
+  color: var(--muted);
+  line-height: 1.35;
 }
 
 .focusPanel {
-  border-color: rgba(141, 247, 193, 0.18);
+  border-color: rgba(95, 159, 115, 0.18);
 }
 
 .focusBox {
@@ -536,8 +667,8 @@ textarea {
 .sectionHead strong {
   padding: 8px 12px;
   border-radius: 999px;
-  color: #07100b;
-  background: #8df7c1;
+  color: #fff;
+  background: var(--green);
 }
 
 .dayPlanProgress {
@@ -564,13 +695,43 @@ textarea {
   gap: 12px;
   align-items: center;
   padding: 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.045);
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .prayerItem strong {
   display: block;
+}
+
+.autoPrayerBox {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--greenSoft);
+  border: 1px solid rgba(95, 159, 115, 0.18);
+}
+
+.autoPrayerBox strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.autoPrayerBox small {
+  color: var(--muted);
+}
+
+.errorText {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: var(--text);
+  background: var(--sand);
+  font-weight: 800;
 }
 
 .businessHero,
@@ -584,9 +745,9 @@ textarea {
 .businessHero div,
 .financeSummary div {
   padding: 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--line);
 }
 
 .businessHero strong,
@@ -599,10 +760,122 @@ textarea {
   margin-top: 22px;
 }
 
+.quickActionsPanel {
+  border-color: rgba(95, 159, 115, 0.16);
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.schedulePanel {
+  border-color: rgba(185, 151, 79, 0.16);
+}
+
+.scheduleItem {
+  grid-template-columns: 74px 1fr 34px;
+}
+
+.scheduleTime {
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  border-radius: 14px;
+  color: var(--text);
+  background: var(--sand);
+  font-weight: 1000;
+  font-size: 13px;
+}
+
+.scheduleItem strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.scheduleItem small {
+  color: var(--muted);
+}
+
+.nowPanel {
+  border-color: rgba(95, 159, 115, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(95, 159, 115, 0.12), transparent 34%),
+    var(--cardStrong);
+}
+
+.nowPanel.warning,
+.nowPanel.soft {
+  border-color: rgba(185, 151, 79, 0.24);
+  background:
+    radial-gradient(circle at top left, rgba(231, 215, 177, 0.28), transparent 34%),
+    var(--cardStrong);
+}
+
+.nowGrid {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.nowTime {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--line);
+}
+
+.nowTime strong {
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.nowCommand {
+  padding: 12px 14px;
+  border-radius: 18px;
+  color: var(--text);
+  background: var(--greenSoft);
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.nowPanel.warning .nowCommand,
+.nowPanel.soft .nowCommand {
+  background: #efe5c8;
+}
+
+.nowActions {
+  display: grid;
+  min-width: 120px;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@keyframes softIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 800px) {
   .app {
     padding: 14px;
-    padding-bottom: calc(128px + env(safe-area-inset-bottom));
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
   }
 
   .shell {
@@ -641,8 +914,8 @@ textarea {
     top: auto;
     margin: 0;
     padding: 7px;
-    border-radius: 26px;
-    box-shadow: 0 18px 70px rgba(0, 0, 0, 0.62);
+    border-radius: 28px;
+    box-shadow: 0 18px 70px rgba(36, 48, 39, 0.2);
   }
 
   .tabBar button {
@@ -652,13 +925,32 @@ textarea {
 
   .panel {
     padding: 17px;
-    border-radius: 24px;
+    border-radius: 26px;
     margin-bottom: 12px;
   }
 
-  .scoreBlock {
+  .scoreBlock,
+  .focusBox,
+  .moneyGrid,
+  .businessHero,
+  .financeSummary,
+  .dayPlanGrid,
+  .reportGrid,
+  .taskForm,
+  .nowGrid {
     grid-template-columns: 1fr;
-    gap: 16px;
+  }
+
+  .quickGrid,
+  .stats,
+  .widgetStrip,
+  .actionGrid,
+  .modeGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .widgetBoard {
+    grid-template-columns: 1fr;
   }
 
   .circle {
@@ -672,41 +964,6 @@ textarea {
 
   .circle small {
     bottom: 29px;
-  }
-
-  .quickGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .moneyGrid,
-  .businessHero,
-  .financeSummary,
-  .dayPlanGrid,
-  .reportGrid,
-  .taskForm,
-  .focusBox {
-    grid-template-columns: 1fr;
-  }
-
-  .quickCard,
-  .statCard,
-  .moneyCard {
-    padding: 13px;
-  }
-
-  .quickCard .label,
-  .statCard .label {
-    font-size: 9px;
-  }
-
-  .taskCard,
-  .dayPlanItem {
-    padding: 13px;
-    border-radius: 17px;
   }
 
   .taskMeta {
@@ -736,7 +993,8 @@ textarea {
   .backupActions button,
   .closeDay,
   .ghostButton,
-  .dangerButton {
+  .dangerButton,
+  .softButton {
     width: 100%;
   }
 
@@ -746,6 +1004,33 @@ textarea {
 
   .prayerItem input {
     grid-column: 1 / -1;
+  }
+
+  .scheduleItem {
+    grid-template-columns: 70px 1fr 34px;
+    padding: 12px;
+  }
+
+  .autoPrayerBox {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .nowTime {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .nowTime .label {
+    grid-column: 1 / -1;
+  }
+
+  .nowActions {
+    min-width: 0;
+  }
+
+  .nowTime strong {
+    font-size: 34px;
   }
 
   .historyItem {
@@ -767,121 +1052,16 @@ textarea {
   }
 
   .quickGrid,
-  .stats {
+  .stats,
+  .widgetStrip,
+  .actionGrid,
+  .modeGrid {
     grid-template-columns: 1fr;
   }
 
   .tabBar button {
     font-size: 11px;
     padding: 11px 11px;
-  }
-}
-
-.quickActionsPanel {
-  border-color: rgba(141, 247, 193, 0.16);
-}
-
-.actionGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.actionButton {
-  display: grid;
-  gap: 4px;
-  min-height: 84px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 14px;
-  color: #fff;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.045);
-  cursor: pointer;
-}
-
-.actionButton strong {
-  font-size: 15px;
-}
-
-.actionButton small {
-  color: rgba(255, 255, 255, 0.58);
-  line-height: 1.35;
-}
-
-.schedulePanel {
-  border-color: rgba(249, 207, 114, 0.16);
-}
-
-.scheduleList {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.scheduleItem {
-  display: grid;
-  grid-template-columns: 74px 1fr 34px;
-  gap: 12px;
-  align-items: center;
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 13px;
-  color: #fff;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.045);
-  cursor: pointer;
-}
-
-.scheduleItem.done {
-  border-color: rgba(141, 247, 193, 0.42);
-  background: rgba(141, 247, 193, 0.13);
-}
-
-.scheduleItem.done .checkBox {
-  background: #8df7c1;
-}
-
-.scheduleTime {
-  display: grid;
-  place-items: center;
-  min-height: 42px;
-  border-radius: 14px;
-  color: #07100b;
-  background: #f9cf72;
-  font-weight: 1000;
-  font-size: 13px;
-}
-
-.scheduleItem strong {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.scheduleItem small {
-  color: rgba(255, 255, 255, 0.58);
-}
-
-@media (max-width: 800px) {
-  .actionGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .actionButton {
-    min-height: 78px;
-  }
-
-  .scheduleItem {
-    grid-template-columns: 70px 1fr 34px;
-    padding: 12px;
-  }
-}
-
-@media (max-width: 390px) {
-  .actionGrid {
-    grid-template-columns: 1fr;
   }
 
   .scheduleItem {
@@ -891,180 +1071,5 @@ textarea {
   .scheduleTime {
     width: fit-content;
     padding: 0 12px;
-  }
-}
-
-.autoPrayerBox {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
-  margin: 16px 0;
-  padding: 14px;
-  border-radius: 20px;
-  background: rgba(141, 247, 193, 0.08);
-  border: 1px solid rgba(141, 247, 193, 0.16);
-}
-
-.autoPrayerBox strong {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.autoPrayerBox small {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.noTop {
-  margin-top: 0;
-}
-
-.errorText {
-  margin: 12px 0;
-  padding: 12px 14px;
-  border-radius: 16px;
-  color: #111;
-  background: #ffb36b;
-  font-weight: 800;
-}
-
-.prayerSettingsGrid {
-  margin-bottom: 16px;
-}
-
-.toggleLine {
-  display: flex !important;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  min-height: 48px;
-}
-
-.toggleLine input {
-  width: 20px;
-  height: 20px;
-}
-
-button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-@media (max-width: 800px) {
-  .autoPrayerBox {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-}
-
-/* govzallaExactPatch */
-.prayerSettingsGrid {
-  display: none;
-}
-
-.autoPrayerBox {
-  background: rgba(141, 247, 193, 0.1);
-  border-color: rgba(141, 247, 193, 0.22);
-}
-
-.nowPanel {
-  border-color: rgba(141, 247, 193, 0.18);
-  background:
-    radial-gradient(circle at top left, rgba(141, 247, 193, 0.12), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
-}
-
-.nowPanel.warning {
-  border-color: rgba(249, 207, 114, 0.28);
-  background:
-    radial-gradient(circle at top left, rgba(249, 207, 114, 0.14), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
-}
-
-.nowPanel.danger {
-  border-color: rgba(255, 107, 107, 0.32);
-  background:
-    radial-gradient(circle at top left, rgba(255, 107, 107, 0.16), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035));
-}
-
-.nowGrid {
-  display: grid;
-  grid-template-columns: 150px 1fr auto;
-  gap: 16px;
-  align-items: center;
-}
-
-.nowTime {
-  display: grid;
-  gap: 4px;
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.nowTime strong {
-  font-size: 36px;
-  line-height: 1;
-  letter-spacing: -0.06em;
-}
-
-.nowTime small,
-.nowText p {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.nowText h2 {
-  margin-bottom: 6px;
-}
-
-.nowText p {
-  margin: 0 0 10px;
-  line-height: 1.5;
-}
-
-.nowCommand {
-  padding: 12px 14px;
-  border-radius: 16px;
-  color: #07100b;
-  background: #8df7c1;
-  font-weight: 900;
-  line-height: 1.45;
-}
-
-.nowPanel.warning .nowCommand {
-  background: #f9cf72;
-}
-
-.nowPanel.danger .nowCommand {
-  background: #ff6b6b;
-}
-
-.nowActions {
-  display: grid;
-  min-width: 120px;
-}
-
-@media (max-width: 800px) {
-  .nowGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .nowTime {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-  }
-
-  .nowTime .label {
-    grid-column: 1 / -1;
-  }
-
-  .nowActions {
-    min-width: 0;
-  }
-
-  .nowTime strong {
-    font-size: 34px;
   }
 }

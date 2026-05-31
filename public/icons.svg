@@ -1,13 +1,7 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="112" fill="#07090D"/>
-  <circle cx="256" cy="256" r="178" fill="url(#paint0_radial)"/>
-  <circle cx="256" cy="256" r="146" stroke="#8DF7C1" stroke-width="18"/>
-  <path d="M170 270L226 326L352 186" stroke="#8DF7C1" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M134 398C168 430 208 446 256 446C304 446 344 430 378 398" stroke="#F9CF72" stroke-width="18" stroke-linecap="round"/>
-  <defs>
-    <radialGradient id="paint0_radial" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(178 116) rotate(63.4349) scale(313.05)">
-      <stop stop-color="#19382B"/>
-      <stop offset="1" stop-color="#0B1117"/>
-    </radialGradient>
-  </defs>
+﻿<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#F6F7F2"/>
+  <circle cx="256" cy="256" r="176" fill="#FFFFFF"/>
+  <circle cx="256" cy="256" r="146" stroke="#5F9F73" stroke-width="18"/>
+  <path d="M172 270L226 324L350 188" stroke="#5F9F73" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M142 394C174 424 214 440 256 440C298 440 338 424 370 394" stroke="#B9974F" stroke-width="18" stroke-linecap="round"/>
 </svg>
