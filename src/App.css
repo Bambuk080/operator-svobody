@@ -1,7 +1,7 @@
 ﻿.app {
   min-height: 100vh;
   padding: 18px;
-  padding-bottom: 108px;
+  padding-bottom: 118px;
   color: #f5f7fb;
   background:
     radial-gradient(circle at top left, rgba(90, 255, 190, 0.18), transparent 30%),
@@ -45,13 +45,11 @@ h2 {
 
 .subtitle,
 .command,
-.rule p,
 .miniInfo,
 .emptyText,
 .backupHint,
-.summaryLine span,
-.focusInfo p,
-.historyGoal {
+.historyGoal,
+.focusInfo p {
   color: rgba(255, 255, 255, 0.68);
   line-height: 1.6;
 }
@@ -71,14 +69,14 @@ h2 {
 .tabBar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   gap: 8px;
   margin: 0 0 14px;
   padding: 8px;
   overflow-x: auto;
   border-radius: 999px;
-  background: rgba(7, 9, 13, 0.72);
+  background: rgba(7, 9, 13, 0.78);
   backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -104,11 +102,7 @@ h2 {
   padding: 20px;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.09),
-    rgba(255, 255, 255, 0.035)
-  );
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
   box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
 }
 
@@ -137,9 +131,8 @@ h2 {
   z-index: 1;
 }
 
-.circle {
-  width: 140px;
-  height: 140px;
+.circle,
+.timerCircle {
   display: grid;
   place-items: center;
   position: relative;
@@ -150,13 +143,19 @@ h2 {
   border: 7px solid transparent;
 }
 
+.circle {
+  width: 140px;
+  height: 140px;
+}
+
 .circle span {
   font-size: 50px;
   font-weight: 1000;
   letter-spacing: -0.08em;
 }
 
-.circle small {
+.circle small,
+.timerCircle small {
   position: absolute;
   bottom: 34px;
   color: rgba(255, 255, 255, 0.55);
@@ -174,30 +173,11 @@ h2 {
   font-weight: 1000;
 }
 
-.status.excellent,
-.historyScore.excellent {
-  background: #8df7c1;
-}
-
-.status.strong,
-.historyScore.strong {
-  background: #b8f78d;
-}
-
-.status.normal,
-.historyScore.normal {
-  background: #f9cf72;
-}
-
-.status.weak,
-.historyScore.weak {
-  background: #ffb36b;
-}
-
-.status.failed,
-.historyScore.failed {
-  background: #ff6b6b;
-}
+.excellent { background: #8df7c1; }
+.strong { background: #b8f78d; }
+.normal { background: #f9cf72; }
+.weak { background: #ffb36b; }
+.failed { background: #ff6b6b; }
 
 .progress,
 .smallProgress,
@@ -232,7 +212,8 @@ h2 {
 
 .quickGrid,
 .stats,
-.moneyGrid {
+.moneyGrid,
+.dayPlanGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
@@ -245,7 +226,8 @@ h2 {
 
 .quickCard,
 .statCard,
-.moneyCard {
+.moneyCard,
+.dayBlock {
   padding: 14px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -270,7 +252,9 @@ h2 {
 .businessHero small,
 .financeSummary small,
 .prayerItem small,
-.moneyCard small {
+.moneyCard small,
+.dayBlockHead small,
+.focusLog small {
   color: rgba(255, 255, 255, 0.62);
 }
 
@@ -281,13 +265,15 @@ h2 {
 .taskList,
 .settingsList,
 .historyList,
-.prayerList {
+.prayerList,
+.dayBlockItems {
   display: grid;
   gap: 10px;
   margin-top: 16px;
 }
 
-.taskCard {
+.taskCard,
+.dayPlanItem {
   width: 100%;
   display: grid;
   grid-template-columns: 34px 1fr;
@@ -303,6 +289,7 @@ h2 {
 }
 
 .taskCard.done,
+.dayPlanItem.done,
 .prayerItem.done {
   border-color: rgba(141, 247, 193, 0.4);
   background: rgba(141, 247, 193, 0.12);
@@ -321,8 +308,7 @@ h2 {
   cursor: pointer;
 }
 
-.taskCard.done .checkBox,
-.prayerItem.done .checkBox {
+.done .checkBox {
   background: #8df7c1;
 }
 
@@ -376,6 +362,13 @@ textarea {
   min-height: 92px;
   resize: vertical;
   line-height: 1.5;
+}
+
+.bigTextarea {
+  margin-top: 16px;
+  min-height: 360px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
 }
 
 .closeDay {
@@ -454,10 +447,6 @@ textarea {
   background: rgba(255, 255, 255, 0.045);
 }
 
-.taskEdit input {
-  font-weight: 800;
-}
-
 .taskMeta {
   display: grid;
   grid-template-columns: 1fr 90px;
@@ -493,14 +482,6 @@ textarea {
 .timerCircle {
   width: 150px;
   height: 150px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  border-radius: 50%;
-  background:
-    linear-gradient(#090d12, #090d12) padding-box,
-    conic-gradient(from 180deg, #8df7c1, #f9cf72, #8df7c1) border-box;
-  border: 7px solid transparent;
 }
 
 .timerCircle span {
@@ -509,31 +490,46 @@ textarea {
   letter-spacing: -0.05em;
 }
 
-.timerCircle small {
-  position: absolute;
-  bottom: 36px;
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 800;
-}
-
-.focusInfo strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 18px;
-}
-
 .focusProgress {
   height: 12px;
 }
 
-.historyGoal {
-  margin: 8px 0 0;
+.focusLog {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
 }
 
-.summaryLine {
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.sectionHead strong {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #07100b;
+  background: #8df7c1;
+}
+
+.dayPlanProgress {
+  margin: 12px 0 16px;
+}
+
+.dayPlanGrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dayBlockHead {
   display: grid;
-  gap: 6px;
-  margin: 16px 0;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.dayBlockHead strong {
+  font-size: 18px;
 }
 
 .prayerItem {
@@ -614,12 +610,9 @@ textarea {
   .reportGrid,
   .moneyGrid,
   .businessHero,
-  .financeSummary {
+  .financeSummary,
+  .dayPlanGrid {
     grid-template-columns: 1fr;
-  }
-
-  .statCard {
-    padding: 13px;
   }
 
   .taskMeta {
