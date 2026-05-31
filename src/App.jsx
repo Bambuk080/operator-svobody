@@ -1392,6 +1392,27 @@ function App() {
               </p>
             </section>
 
+            <section className={`panel nowPanel ${nowPanel.urgency}`}>
+              <div className="nowGrid">
+                <div className="nowTime">
+                  <p className="label">Сейчас</p>
+                  <strong>{nowPanel.countdown}</strong>
+                  <small>до {nowPanel.nextLabel}</small>
+                </div>
+
+                <div className="nowText">
+                  <h2>{nowPanel.title}</h2>
+                  <p>{nowPanel.subtitle}</p>
+                  <div className="nowCommand">{nowPanel.command}</div>
+                </div>
+
+                <div className="nowActions">
+                  <button className="closeDay noTop" onClick={() => setActiveTab(nowPanel.actionTab)}>
+                    Открыть
+                  </button>
+                </div>
+              </div>
+            </section>
             <section className="quickGrid">
               <div className="quickCard">
                 <p className="label">Главная задача</p>
@@ -2161,6 +2182,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
