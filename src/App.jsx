@@ -1,103 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const categories = ["Религия", "Дисциплина", "Бизнес", "Тело", "Знания"];
+import { categories, defaultTasks, emptyReport, storageKeys } from "./data/defaults";
+import { Header } from "./components/Header";
+import { Tabs } from "./components/Tabs";
+import { Today } from "./components/Today";
+import { Report } from "./components/Report";
+import { History } from "./components/History";
+import { Settings } from "./components/Settings";
 
-const defaultTasks = [
-  { id: "fajr", title: "Фаджр вовремя", category: "Религия", points: 12 },
-  { id: "quran", title: "Коран и азкары утром", category: "Религия", points: 10 },
-  { id: "duha", title: "Духа или религиозный минимум", category: "Религия", points: 6 },
-  { id: "main-task", title: "Главная задача дня выполнена", category: "Дисциплина", points: 15 },
-  { id: "no-youtube-before-main", title: "YouTube не открыт до главной задачи", category: "Дисциплина", points: 10 },
-  { id: "book-before-sleep", title: "Книга 15–20 минут перед сном", category: "Дисциплина", points: 8 },
-  { id: "whatsapp-status", title: "3 WhatsApp-статуса", category: "Бизнес", points: 10 },
-  { id: "wb-step", title: "Мини-шаг по WB / главный товар", category: "Бизнес", points: 10 },
-  { id: "training", title: "Тренировка / активность по графику", category: "Тело", points: 10 },
-  { id: "arabic-learning", title: "Арабский / урок / обучение", category: "Знания", points: 9 },
-];
-
-const emptyReport = {
-  energy: "",
-  focus: "",
-  youtube: "",
-  win: "",
-  problem: "",
-  tomorrow: "",
-  note: "",
-};
-
-function makeId() {
-  return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function getTodayKey() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getPrettyDate() {
-  return new Date().toLocaleDateString("ru-RU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function loadJson(key, fallback) {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function getStatus(score) {
-  if (score >= 90) return "Отличный день";
-  if (score >= 75) return "Сильный день";
-  if (score >= 60) return "Нормальный день";
-  if (score >= 40) return "Слабый день";
-  return "День слит";
-}
-
-function getStatusClass(score) {
-  if (score >= 90) return "excellent";
-  if (score >= 75) return "strong";
-  if (score >= 60) return "normal";
-  if (score >= 40) return "weak";
-  return "failed";
-}
-
-function getOperatorText(score, done, tasks) {
-  const mainTask = tasks.find((task) => task.id === "main-task");
-  const fajrTask = tasks.find((task) => task.id === "fajr");
-  const youtubeTask = tasks.find((task) => task.id === "no-youtube-before-main");
-
-  if (fajrTask && !done[fajrTask.id]) {
-    return "Фаджр — главный маркер дня. Если он сорван, нельзя делать вид, что всё нормально. Сегодня задача — спасти остаток дня и защитить сон.";
-  }
-
-  if (mainTask && !done[mainTask.id]) {
-    return "Главная задача не закрыта. Не бери новые дела. Не уходи в YouTube. Разбей главную задачу на 10 минут и сделай первый подход.";
-  }
-
-  if (youtubeTask && !done[youtubeTask.id]) {
-    return "YouTube до главной задачи — это не отдых, а побег от неопределённости. Исправляй день конкретным действием.";
-  }
-
-  if (score >= 75) {
-    return "День держится. Теперь не испорти вечер. Закрой отчёт, книгу и сон после Иша.";
-  }
-
-  if (score >= 40) {
-    return "День слабый, но не потерян. Выбери один маленький шаг и закрой его без переговоров с собой.";
-  }
-
-  return "День идёт в слив. Сейчас не нужен идеальный план. Нужен один честный шаг: религия, главная задача или сон.";
-}
+import { getPrettyDate, getTodayKey, makeId } from "./utils/date";
+import { loadJson, saveJson } from "./utils/storage";
+import { getCategoryStats, getScoreData, getStatus } from "./utils/scoring";
 
 function App() {
   const todayKey = getTodayKey();
@@ -105,19 +19,19 @@ function App() {
   const [activeTab, setActiveTab] = useState("today");
 
   const [tasks, setTasks] = useState(() =>
-    loadJson("operator-v1-tasks", defaultTasks)
+    loadJson(storageKeys.tasks, defaultTasks)
   );
 
   const [doneByDate, setDoneByDate] = useState(() =>
-    loadJson("operator-v1-done-by-date", {})
+    loadJson(storageKeys.doneByDate, {})
   );
 
   const [reportsByDate, setReportsByDate] = useState(() =>
-    loadJson("operator-v1-reports-by-date", {})
+    loadJson(storageKeys.reportsByDate, {})
   );
 
   const [history, setHistory] = useState(() =>
-    loadJson("operator-v1-history", [])
+    loadJson(storageKeys.history, [])
   );
 
   const [newTask, setNewTask] = useState({
@@ -132,62 +46,33 @@ function App() {
   const report = reportsByDate[todayKey] || emptyReport;
 
   useEffect(() => {
-    localStorage.setItem("operator-v1-tasks", JSON.stringify(tasks));
+    saveJson(storageKeys.tasks, tasks);
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem("operator-v1-done-by-date", JSON.stringify(doneByDate));
+    saveJson(storageKeys.doneByDate, doneByDate);
   }, [doneByDate]);
 
   useEffect(() => {
-    localStorage.setItem("operator-v1-reports-by-date", JSON.stringify(reportsByDate));
+    saveJson(storageKeys.reportsByDate, reportsByDate);
   }, [reportsByDate]);
 
   useEffect(() => {
-    localStorage.setItem("operator-v1-history", JSON.stringify(history));
+    saveJson(storageKeys.history, history);
   }, [history]);
 
-  const totalPoints = useMemo(() => {
-    return tasks.reduce((sum, task) => sum + Number(task.points || 0), 0);
-  }, [tasks]);
-
-  const earnedPoints = useMemo(() => {
-    return tasks.reduce((sum, task) => {
-      return done[task.id] ? sum + Number(task.points || 0) : sum;
-    }, 0);
-  }, [done, tasks]);
-
-  const score = totalPoints === 0 ? 0 : Math.round((earnedPoints / totalPoints) * 100);
-  const completedCount = tasks.filter((task) => done[task.id]).length;
+  const scoreData = useMemo(() => {
+    return getScoreData(tasks, done);
+  }, [tasks, done]);
 
   const categoryStats = useMemo(() => {
-    return categories.map((category) => {
-      const categoryTasks = tasks.filter((task) => task.category === category);
-
-      const max = categoryTasks.reduce(
-        (sum, task) => sum + Number(task.points || 0),
-        0
-      );
-
-      const value = categoryTasks.reduce((sum, task) => {
-        return done[task.id] ? sum + Number(task.points || 0) : sum;
-      }, 0);
-
-      return {
-        category,
-        value,
-        max,
-        percent: max === 0 ? 0 : Math.round((value / max) * 100),
-      };
-    });
-  }, [done, tasks]);
-
-  const lastHistory = history.slice(0, 10);
+    return getCategoryStats(categories, tasks, done);
+  }, [tasks, done]);
 
   const backupObject = useMemo(() => {
     return {
       app: "operator-svobody",
-      version: "1.2",
+      version: "2.0",
       createdAt: new Date().toISOString(),
       tasks,
       doneByDate,
@@ -307,12 +192,12 @@ function App() {
     const record = {
       date: todayKey,
       prettyDate: getPrettyDate(),
-      score,
-      status: getStatus(score),
-      completedCount,
+      score: scoreData.score,
+      status: getStatus(scoreData.score),
+      completedCount: scoreData.completedCount,
       totalTasks: tasks.length,
-      earnedPoints,
-      totalPoints,
+      earnedPoints: scoreData.earnedPoints,
+      totalPoints: scoreData.totalPoints,
       report,
     };
 
@@ -376,380 +261,48 @@ function App() {
   return (
     <main className="app">
       <div className="shell">
-        <header className="topHeader">
-          <div>
-            <p className="label">Оператор свободы</p>
-            <h1>Панель дня</h1>
-            <p className="subtitle">{getPrettyDate()}</p>
-          </div>
+        <Header prettyDate={getPrettyDate()} onResetDay={resetDay} />
 
-          <button onClick={resetDay} className="reset">
-            Сброс
-          </button>
-        </header>
-
-        <nav className="tabBar">
-          <button
-            className={activeTab === "today" ? "active" : ""}
-            onClick={() => setActiveTab("today")}
-          >
-            Сегодня
-          </button>
-
-          <button
-            className={activeTab === "report" ? "active" : ""}
-            onClick={() => setActiveTab("report")}
-          >
-            Отчёт
-          </button>
-
-          <button
-            className={activeTab === "history" ? "active" : ""}
-            onClick={() => setActiveTab("history")}
-          >
-            История
-          </button>
-
-          <button
-            className={activeTab === "settings" ? "active" : ""}
-            onClick={() => setActiveTab("settings")}
-          >
-            Настройки
-          </button>
-        </nav>
+        <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {activeTab === "today" && (
-          <>
-            <section className="panel hero">
-              <div className="scoreBlock">
-                <div className="circle">
-                  <span>{score}</span>
-                  <small>/100</small>
-                </div>
-
-                <div>
-                  <p className={`status ${getStatusClass(score)}`}>
-                    {getStatus(score)}
-                  </p>
-                  <h2>{getOperatorText(score, done, tasks)}</h2>
-                  <p className="command">
-                    Команда дня: YouTube запрещён до выполнения главной задачи.
-                  </p>
-                </div>
-              </div>
-
-              <div className="progress">
-                <div className="progressFill" style={{ width: `${score}%` }} />
-              </div>
-
-              <p className="miniInfo">
-                Закрыто задач: {completedCount} из {tasks.length}. Набрано:{" "}
-                {earnedPoints} из {totalPoints} баллов.
-              </p>
-            </section>
-
-            <section className="stats">
-              {categoryStats.map((item) => (
-                <div className="statCard" key={item.category}>
-                  <div className="statTop">
-                    <span>{item.category}</span>
-                    <strong>
-                      {item.value}/{item.max}
-                    </strong>
-                  </div>
-
-                  <div className="smallProgress">
-                    <div
-                      className="smallProgressFill"
-                      style={{ width: `${item.percent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </section>
-
-            <section className="panel">
-              <p className="label">Чеклист</p>
-              <h2>Что закрыть сегодня</h2>
-
-              <div className="taskList simple">
-                {tasks.map((task) => (
-                  <button
-                    key={task.id}
-                    className={`taskCard ${done[task.id] ? "done" : ""}`}
-                    onClick={() => toggleTask(task.id)}
-                  >
-                    <span className="checkBox">{done[task.id] ? "✓" : ""}</span>
-
-                    <span>
-                      <strong>{task.title}</strong>
-                      <small>
-                        {task.category} · +{task.points} баллов
-                      </small>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel rule">
-              <p className="label">Жёсткое правило</p>
-              <h2>Не уходи в YouTube, когда задача непонятная</h2>
-              <p>
-                Если не знаешь, что делать — разбей задачу на шаг на 10 минут.
-                Свобода строится не мыслями, а закрытыми действиями.
-              </p>
-            </section>
-          </>
+          <Today
+            tasks={tasks}
+            done={done}
+            scoreData={scoreData}
+            categoryStats={categoryStats}
+            onToggleTask={toggleTask}
+          />
         )}
 
         {activeTab === "report" && (
-          <section className="panel">
-            <p className="label">Вечерний отчёт</p>
-            <h2>Закрытие дня без самообмана</h2>
-
-            <div className="reportGrid">
-              <label>
-                Энергия 1–10
-                <input
-                  value={report.energy}
-                  onChange={(event) => updateReport("energy", event.target.value)}
-                  placeholder="Например: 6"
-                />
-              </label>
-
-              <label>
-                Фокус 1–10
-                <input
-                  value={report.focus}
-                  onChange={(event) => updateReport("focus", event.target.value)}
-                  placeholder="Например: 7"
-                />
-              </label>
-
-              <label>
-                YouTube / скроллинг
-                <input
-                  value={report.youtube}
-                  onChange={(event) => updateReport("youtube", event.target.value)}
-                  placeholder="Например: 40 минут"
-                />
-              </label>
-            </div>
-
-            <label className="fullLabel">
-              Что сегодня получилось?
-              <textarea
-                value={report.win}
-                onChange={(event) => updateReport("win", event.target.value)}
-                placeholder="Например: сделал WhatsApp-статусы и не сорвал утро"
-              />
-            </label>
-
-            <label className="fullLabel">
-              Что сорвалось и почему?
-              <textarea
-                value={report.problem}
-                onChange={(event) => updateReport("problem", event.target.value)}
-                placeholder="Пиши честно. Не красиво, а правду."
-              />
-            </label>
-
-            <label className="fullLabel">
-              Что исправить завтра?
-              <textarea
-                value={report.tomorrow}
-                onChange={(event) => updateReport("tomorrow", event.target.value)}
-                placeholder="Один конкретный шаг на завтра"
-              />
-            </label>
-
-            <label className="fullLabel">
-              Заметка дня
-              <textarea
-                value={report.note}
-                onChange={(event) => updateReport("note", event.target.value)}
-                placeholder="Любой вывод, мысль или наблюдение"
-              />
-            </label>
-
-            <button className="closeDay" onClick={closeDay}>
-              Закрыть день и сохранить
-            </button>
-          </section>
+          <Report
+            report={report}
+            onUpdateReport={updateReport}
+            onCloseDay={closeDay}
+          />
         )}
 
-        {activeTab === "history" && (
-          <section className="panel">
-            <p className="label">История</p>
-            <h2>Последние сохранённые дни</h2>
-
-            {lastHistory.length === 0 ? (
-              <p className="emptyText">
-                Истории пока нет. Заполни вечерний отчёт и нажми “Закрыть день”.
-              </p>
-            ) : (
-              <div className="historyList">
-                {lastHistory.map((item) => (
-                  <div className="historyItem" key={item.date}>
-                    <div>
-                      <strong>{item.prettyDate}</strong>
-                      <small>
-                        {item.completedCount}/{item.totalTasks} задач ·{" "}
-                        {item.earnedPoints}/{item.totalPoints} баллов
-                      </small>
-                    </div>
-
-                    <span className={`historyScore ${getStatusClass(item.score)}`}>
-                      {item.score}/100
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+        {activeTab === "history" && <History history={history} />}
 
         {activeTab === "settings" && (
-          <>
-            <section className="panel">
-              <p className="label">Настройка</p>
-              <h2>Добавить задачу</h2>
-
-              <form className="taskForm" onSubmit={addTask}>
-                <input
-                  value={newTask.title}
-                  onChange={(event) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      title: event.target.value,
-                    }))
-                  }
-                  placeholder="Например: 20 минут арабского"
-                />
-
-                <select
-                  value={newTask.category}
-                  onChange={(event) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      category: event.target.value,
-                    }))
-                  }
-                >
-                  {categories.map((category) => (
-                    <option value={category} key={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={newTask.points}
-                  onChange={(event) =>
-                    setNewTask((prev) => ({
-                      ...prev,
-                      points: event.target.value,
-                    }))
-                  }
-                />
-
-                <button type="submit">Добавить</button>
-              </form>
-
-              <button className="ghostButton" onClick={resetTasksToDefault}>
-                Вернуть стандартные задачи
-              </button>
-            </section>
-
-            <section className="panel">
-              <p className="label">Резервная копия</p>
-              <h2>Сохранить или восстановить данные</h2>
-
-              <p className="backupHint">
-                Здесь хранятся задачи, галочки, вечерние отчёты и история.
-                Перед крупными обновлениями лучше делать резервную копию.
-              </p>
-
-              <div className="backupActions">
-                <button className="closeDay" onClick={copyBackup}>
-                  Скопировать данные
-                </button>
-
-                <button className="ghostButton noMargin" onClick={downloadBackup}>
-                  Скачать JSON
-                </button>
-              </div>
-
-              <label className="fullLabel">
-                Восстановить из резервной копии
-                <textarea
-                  value={importText}
-                  onChange={(event) => setImportText(event.target.value)}
-                  placeholder="Вставь сюда JSON резервной копии"
-                />
-              </label>
-
-              <button className="dangerButton" onClick={restoreBackup}>
-                Восстановить данные
-              </button>
-            </section>
-
-            <section className="panel">
-              <p className="label">Редактор задач</p>
-              <h2>Изменить текущий список</h2>
-
-              <div className="settingsList">
-                {tasks.map((task) => (
-                  <div key={task.id} className="taskRow">
-                    <div className="taskEdit">
-                      <input
-                        value={task.title}
-                        onChange={(event) =>
-                          updateTask(task.id, "title", event.target.value)
-                        }
-                      />
-
-                      <div className="taskMeta">
-                        <select
-                          value={task.category}
-                          onChange={(event) =>
-                            updateTask(task.id, "category", event.target.value)
-                          }
-                        >
-                          {categories.map((category) => (
-                            <option value={category} key={category}>
-                              {category}
-                            </option>
-                          ))}
-                        </select>
-
-                        <input
-                          type="number"
-                          min="1"
-                          max="50"
-                          value={task.points}
-                          onChange={(event) =>
-                            updateTask(task.id, "points", event.target.value)
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      className="deleteButton"
-                      onClick={() => deleteTask(task.id)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
+          <Settings
+            categories={categories}
+            tasks={tasks}
+            newTask={newTask}
+            setNewTask={setNewTask}
+            onAddTask={addTask}
+            onResetTasksToDefault={resetTasksToDefault}
+            onUpdateTask={updateTask}
+            onDeleteTask={deleteTask}
+            backupProps={{
+              importText,
+              setImportText,
+              onCopyBackup: copyBackup,
+              onDownloadBackup: downloadBackup,
+              onRestoreBackup: restoreBackup,
+            }}
+          />
         )}
       </div>
     </main>
