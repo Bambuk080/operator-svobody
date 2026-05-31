@@ -4,12 +4,18 @@ import {
   getStatusClass,
 } from "../utils/scoring";
 
+import { FocusTimer } from "./FocusTimer";
+
 export function Today({
   tasks,
   done,
   scoreData,
   categoryStats,
   onToggleTask,
+  mainGoal,
+  onUpdateMainGoal,
+  focusSessions,
+  onFocusComplete,
 }) {
   const { score, completedCount, earnedPoints, totalPoints } = scoreData;
 
@@ -42,6 +48,13 @@ export function Today({
           {earnedPoints} из {totalPoints} баллов.
         </p>
       </section>
+
+      <FocusTimer
+        mainGoal={mainGoal}
+        onUpdateMainGoal={onUpdateMainGoal}
+        focusSessions={focusSessions}
+        onFocusComplete={onFocusComplete}
+      />
 
       <section className="stats">
         {categoryStats.map((item) => (

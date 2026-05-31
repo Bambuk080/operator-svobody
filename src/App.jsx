@@ -34,6 +34,14 @@ function App() {
     loadJson(storageKeys.history, [])
   );
 
+  const [focusByDate, setFocusByDate] = useState(() =>
+    loadJson(storageKeys.focusByDate, {})
+  );
+
+  const [mainGoalsByDate, setMainGoalsByDate] = useState(() =>
+    loadJson(storageKeys.mainGoalsByDate, {})
+  );
+
   const [newTask, setNewTask] = useState({
     title: "",
     category: "Дисциплина",
@@ -44,6 +52,8 @@ function App() {
 
   const done = doneByDate[todayKey] || {};
   const report = reportsByDate[todayKey] || emptyReport;
+  const focusToday = focusByDate[todayKey] || { sessions: 0 };
+  const mainGoal = mainGoalsByDate[todayKey] || "";
 
   useEffect(() => {
     saveJson(storageKeys.tasks, tasks);
@@ -61,6 +71,14 @@ function App() {
     saveJson(storageKeys.history, history);
   }, [history]);
 
+  useEffect(() => {
+    saveJson(storageKeys.focusByDate, focusByDate);
+  }, [focusByDate]);
+
+  useEffect(() => {
+    saveJson(storageKeys.mainGoalsByDate, mainGoalsByDate);
+  }, [mainGoalsByDate]);
+
   const scoreData = useMemo(() => {
     return getScoreData(tasks, done);
   }, [tasks, done]);
@@ -72,14 +90,16 @@ function App() {
   const backupObject = useMemo(() => {
     return {
       app: "operator-svobody",
-      version: "2.0",
+      version: "2.1",
       createdAt: new Date().toISOString(),
       tasks,
       doneByDate,
       reportsByDate,
       history,
+      focusByDate,
+      mainGoalsByDate,
     };
-  }, [tasks, doneByDate, reportsByDate, history]);
+  }, [tasks, doneByDate, reportsByDate, history, focusByDate, mainGoalsByDate]);
 
   const backupText = useMemo(() => {
     return JSON.stringify(backupObject, null, 2);
@@ -96,7 +116,7 @@ function App() {
   }
 
   function resetDay() {
-    const confirmReset = window.confirm("Сбросить отметки и отчёт за сегодня?");
+    const confirmReset = window.confirm("Сбросить отметки, отчёт, фокус и главную задачу за сегодня?");
     if (!confirmReset) return;
 
     setDoneByDate((prev) => ({
@@ -107,6 +127,16 @@ function App() {
     setReportsByDate((prev) => ({
       ...prev,
       [todayKey]: emptyReport,
+    }));
+
+    setFocusByDate((prev) => ({
+      ...prev,
+      [todayKey]: { sessions: 0 },
+    }));
+
+    setMainGoalsByDate((prev) => ({
+      ...prev,
+      [todayKey]: "",
     }));
   }
 
@@ -181,6 +211,27 @@ function App() {
     }));
   }
 
+  function updateMainGoal(value) {
+    setMainGoalsByDate((prev) => ({
+      ...prev,
+      [todayKey]: value,
+    }));
+  }
+
+  function completeFocusSession() {
+    setFocusByDate((prev) => {
+      const current = prev[todayKey] || { sessions: 0 };
+
+      return {
+        ...prev,
+        [todayKey]: {
+          ...current,
+          sessions: Number(current.sessions || 0) + 1,
+        },
+      };
+    });
+  }
+
   function resetTasksToDefault() {
     const confirmReset = window.confirm("Вернуть стандартные задачи?");
     if (!confirmReset) return;
@@ -199,6 +250,8 @@ function App() {
       earnedPoints: scoreData.earnedPoints,
       totalPoints: scoreData.totalPoints,
       report,
+      mainGoal,
+      focusSessions: focusToday.sessions || 0,
     };
 
     setHistory((prev) => {
@@ -251,6 +304,8 @@ function App() {
       setDoneByDate(data.doneByDate || {});
       setReportsByDate(data.reportsByDate || {});
       setHistory(Array.isArray(data.history) ? data.history : []);
+      setFocusByDate(data.focusByDate || {});
+      setMainGoalsByDate(data.mainGoalsByDate || {});
 
       alert("Данные восстановлены.");
     } catch {
@@ -272,6 +327,10 @@ function App() {
             scoreData={scoreData}
             categoryStats={categoryStats}
             onToggleTask={toggleTask}
+            mainGoal={mainGoal}
+            onUpdateMainGoal={updateMainGoal}
+            focusSessions={focusToday.sessions || 0}
+            onFocusComplete={completeFocusSession}
           />
         )}
 

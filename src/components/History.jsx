@@ -21,7 +21,12 @@ export function History({ history }) {
                 <small>
                   {item.completedCount}/{item.totalTasks} задач ·{" "}
                   {item.earnedPoints}/{item.totalPoints} баллов
+                  {item.focusSessions ? ` · фокус: ${item.focusSessions}` : ""}
                 </small>
+
+                {item.mainGoal ? (
+                  <p className="historyGoal">{item.mainGoal}</p>
+                ) : null}
               </div>
 
               <span className={`historyScore ${getStatusClass(item.score)}`}>

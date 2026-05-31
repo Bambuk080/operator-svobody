@@ -28,4 +28,6 @@ export const storageKeys = {
   doneByDate: "operator-v1-done-by-date",
   reportsByDate: "operator-v1-reports-by-date",
   history: "operator-v1-history",
+  focusByDate: "operator-v2-focus-by-date",
+  mainGoalsByDate: "operator-v2-main-goals-by-date",
 };
