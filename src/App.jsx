@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8.3 Auto Prayer";
+const VERSION = "8.4 Govzalla Exact Prayer";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
@@ -312,6 +312,106 @@ function getPrayerApiDate() {
   const d = new Date();
 
   return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+}
+
+function normalizeGovzallaTime(value) {
+  if (!value || !String(value).includes(":")) return "";
+
+  const [hRaw, mRaw] = String(value).split(":");
+  const h = Number(hRaw);
+  const m = Number(mRaw);
+
+  if (Number.isNaN(h) || Number.isNaN(m)) return "";
+
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function textFromHtml(html) {
+  return String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findPrayerTime(text, names) {
+  for (const name of names) {
+    const regex = new RegExp(`(\\d{1,2}:\\d{2})\\s*${name}`, "i");
+    const match = text.match(regex);
+
+    if (match?.[1]) {
+      return normalizeGovzallaTime(match[1]);
+    }
+  }
+
+  return "";
+}
+
+function extractGovzallaPrayerTimes(html) {
+  const text = textFromHtml(html);
+
+  const byName = {
+    fajr: findPrayerTime(text, ["Фаджр"]),
+    sunrise: findPrayerTime(text, ["Рассвет", "Восход"]),
+    dhuhr: findPrayerTime(text, ["Зухр"]),
+    asr: findPrayerTime(text, ["Аср"]),
+    maghrib: findPrayerTime(text, ["Магриб"]),
+    isha: findPrayerTime(text, ["Иша"]),
+  };
+
+  const allFound = Object.values(byName).every(Boolean);
+
+  if (allFound) {
+    return byName;
+  }
+
+  const times = text.match(/\b\d{1,2}:\d{2}\b/g) || [];
+
+  if (times.length < 6) {
+    throw new Error("Не смог найти 6 времён намаза на Govzalla");
+  }
+
+  return {
+    fajr: normalizeGovzallaTime(times[0]),
+    sunrise: normalizeGovzallaTime(times[1]),
+    dhuhr: normalizeGovzallaTime(times[2]),
+    asr: normalizeGovzallaTime(times[3]),
+    maghrib: normalizeGovzallaTime(times[4]),
+    isha: normalizeGovzallaTime(times[5]),
+  };
+}
+
+function mergePrayerTimingsFromGovzalla(currentPrayer, timings) {
+  return {
+    ...defaultPrayer,
+    ...currentPrayer,
+    fajr: {
+      ...currentPrayer.fajr,
+      time: timings.fajr,
+    },
+    sunrise: {
+      ...currentPrayer.sunrise,
+      time: timings.sunrise,
+    },
+    dhuhr: {
+      ...currentPrayer.dhuhr,
+      time: timings.dhuhr,
+    },
+    asr: {
+      ...currentPrayer.asr,
+      time: timings.asr,
+    },
+    maghrib: {
+      ...currentPrayer.maghrib,
+      time: timings.maghrib,
+    },
+    isha: {
+      ...currentPrayer.isha,
+      time: timings.isha,
+    },
+  };
 }
 
 function cleanPrayerTime(value) {
@@ -783,43 +883,65 @@ function App() {
     setPrayerLoading(true);
     setPrayerError("");
 
+    const govzallaUrl = "https://govzalla.com/%D0%BB%D0%B0%D0%BC%D0%B0%D0%B7%D0%B0%D0%BD-%D1%85%D0%B5%D0%BD%D0%B0%D1%88-%D0%B2%D1%80%D0%B5%D0%BC%D1%8F-%D0%BC%D0%BE%D0%BB%D0%B8%D1%82%D0%B2";
+
+    const sources = [
+      govzallaUrl,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(govzallaUrl)}`,
+      `https://corsproxy.io/?${encodeURIComponent(govzallaUrl)}`,
+    ];
+
+    let lastError = null;
+
     try {
-      const params = new URLSearchParams({
-        city: prayerSettings.city || "Grozny",
-        country: prayerSettings.country || "Russia",
-        method: String(prayerSettings.method || "14"),
-        school: String(prayerSettings.school || "0"),
-      });
+      for (const source of sources) {
+        try {
+          const response = await fetch(source, {
+            cache: "no-store",
+          });
 
-      const url = `https://api.aladhan.com/v1/timingsByCity/${getPrayerApiDate()}?${params.toString()}`;
-      const response = await fetch(url);
-      const json = await response.json();
+          if (!response.ok) {
+            throw new Error(`Источник не ответил: ${source}`);
+          }
 
-      if (!response.ok || !json?.data?.timings) {
-        throw new Error("API не вернуло времена намаза");
+          const html = await response.text();
+
+          if (!html || !html.includes("Фаджр")) {
+            throw new Error("В ответе нет расписания намаза");
+          }
+
+          const timings = extractGovzallaPrayerTimes(html);
+
+          setPrayerByDate((prev) => {
+            const current = {
+              ...defaultPrayer,
+              ...(prev[todayKey] || {}),
+            };
+
+            return {
+              ...prev,
+              [todayKey]: mergePrayerTimingsFromGovzalla(current, timings),
+            };
+          });
+
+          if (!silent) {
+            alert("Точное время Govzalla загружено.");
+          }
+
+          setPrayerLoading(false);
+          return;
+        } catch (error) {
+          lastError = error;
+        }
       }
 
-      setPrayerByDate((prev) => {
-        const current = {
-          ...defaultPrayer,
-          ...(prev[todayKey] || {}),
-        };
-
-        return {
-          ...prev,
-          [todayKey]: mergePrayerTimingsFromApi(current, json.data.timings),
-        };
-      });
-
-      if (!silent) {
-        alert("Время намаза загружено.");
-      }
+      throw lastError || new Error("Govzalla не ответил");
     } catch (error) {
       console.log(error);
-      setPrayerError("Не получилось загрузить время. Проверь интернет или введи вручную.");
+      setPrayerError("Не получилось загрузить точное время Govzalla. Проверь интернет и попробуй ещё раз.");
 
       if (!silent) {
-        alert("Не получилось загрузить время намаза. Можно ввести вручную.");
+        alert("Не получилось загрузить точное время Govzalla.");
       }
     } finally {
       setPrayerLoading(false);
@@ -1350,18 +1472,17 @@ function App() {
             <h2>Основа дня</h2>
 
             <p className="backupHint">
-              Время намаза загружается автоматически для выбранного города. Если местное расписание отличается,
-              можешь вручную поправить любое время.
+              Время намаза берётся из Govzalla — источника, который совпадает с твоим IslamApp для Грозного. Если нужно, любое время можно поправить вручную.
             </p>
 
             <div className="autoPrayerBox">
               <div>
                 <strong>{prayerSettings.city}, {prayerSettings.country}</strong>
-                <small>метод: {prayerSettings.method} · мазхаб Аср: {prayerSettings.school === "1" ? "Ханафи" : "Шафии/стандарт"}</small>
+                <small>Источник: Govzalla · ориентир: IslamApp</small>
               </div>
 
               <button className="closeDay noTop" onClick={() => fetchPrayerTimes()} disabled={prayerLoading}>
-                {prayerLoading ? "Загрузка..." : "Загрузить время"}
+                {prayerLoading ? "Загрузка..." : "Загрузить точное время"}
               </button>
             </div>
 
@@ -1873,6 +1994,7 @@ function App() {
 }
 
 export default App;
+
 
 
 

@@ -956,3 +956,13 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* govzallaExactPatch */
+.prayerSettingsGrid {
+  display: none;
+}
+
+.autoPrayerBox {
+  background: rgba(141, 247, 193, 0.1);
+  border-color: rgba(141, 247, 193, 0.22);
+}
