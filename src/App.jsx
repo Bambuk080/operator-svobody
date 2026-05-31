@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const VERSION = "8 Foundation";
+const VERSION = "8.1 iPhone Polish";
 const FOCUS_DURATION = 10 * 60;
 
 const tabs = [
@@ -1449,3 +1449,4 @@ function App() {
 }
 
 export default App;
+
