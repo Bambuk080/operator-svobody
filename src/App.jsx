@@ -126,6 +126,8 @@ function App() {
     points: 10,
   });
 
+  const [importText, setImportText] = useState("");
+
   const done = doneByDate[todayKey] || {};
   const report = reportsByDate[todayKey] || emptyReport;
 
@@ -181,6 +183,22 @@ function App() {
   }, [done, tasks]);
 
   const lastHistory = history.slice(0, 10);
+
+  const backupObject = useMemo(() => {
+    return {
+      app: "operator-svobody",
+      version: "1.2",
+      createdAt: new Date().toISOString(),
+      tasks,
+      doneByDate,
+      reportsByDate,
+      history,
+    };
+  }, [tasks, doneByDate, reportsByDate, history]);
+
+  const backupText = useMemo(() => {
+    return JSON.stringify(backupObject, null, 2);
+  }, [backupObject]);
 
   function toggleTask(id) {
     setDoneByDate((prev) => ({
@@ -305,6 +323,54 @@ function App() {
 
     setActiveTab("history");
     alert("День сохранён в истории.");
+  }
+
+  async function copyBackup() {
+    try {
+      await navigator.clipboard.writeText(backupText);
+      alert("Резервная копия скопирована. Сохрани её в Заметки, Telegram или файл.");
+    } catch {
+      setImportText(backupText);
+      alert("Автокопирование не сработало. Текст резервной копии вставлен в поле ниже — скопируй его вручную.");
+    }
+  }
+
+  function downloadBackup() {
+    const blob = new Blob([backupText], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `operator-svobody-backup-${todayKey}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function restoreBackup() {
+    const confirmRestore = window.confirm(
+      "Восстановить данные из резервной копии? Текущие задачи, отчёты и история будут заменены."
+    );
+
+    if (!confirmRestore) return;
+
+    try {
+      const data = JSON.parse(importText);
+
+      if (!Array.isArray(data.tasks)) {
+        alert("Ошибка: в резервной копии нет списка задач.");
+        return;
+      }
+
+      setTasks(data.tasks);
+      setDoneByDate(data.doneByDate || {});
+      setReportsByDate(data.reportsByDate || {});
+      setHistory(Array.isArray(data.history) ? data.history : []);
+
+      alert("Данные восстановлены.");
+    } catch {
+      alert("Не получилось прочитать резервную копию. Проверь, что ты вставил полный JSON-текст.");
+    }
   }
 
   return (
@@ -596,6 +662,39 @@ function App() {
 
               <button className="ghostButton" onClick={resetTasksToDefault}>
                 Вернуть стандартные задачи
+              </button>
+            </section>
+
+            <section className="panel">
+              <p className="label">Резервная копия</p>
+              <h2>Сохранить или восстановить данные</h2>
+
+              <p className="backupHint">
+                Здесь хранятся задачи, галочки, вечерние отчёты и история.
+                Перед крупными обновлениями лучше делать резервную копию.
+              </p>
+
+              <div className="backupActions">
+                <button className="closeDay" onClick={copyBackup}>
+                  Скопировать данные
+                </button>
+
+                <button className="ghostButton noMargin" onClick={downloadBackup}>
+                  Скачать JSON
+                </button>
+              </div>
+
+              <label className="fullLabel">
+                Восстановить из резервной копии
+                <textarea
+                  value={importText}
+                  onChange={(event) => setImportText(event.target.value)}
+                  placeholder="Вставь сюда JSON резервной копии"
+                />
+              </label>
+
+              <button className="dangerButton" onClick={restoreBackup}>
+                Восстановить данные
               </button>
             </section>
 

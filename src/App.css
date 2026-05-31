@@ -47,7 +47,8 @@ h2 {
 .command,
 .rule p,
 .miniInfo,
-.emptyText {
+.emptyText,
+.backupHint {
   color: rgba(255, 255, 255, 0.68);
   line-height: 1.6;
 }
@@ -383,6 +384,32 @@ textarea {
   color: rgba(255, 255, 255, 0.75);
   background: transparent;
   cursor: pointer;
+}
+
+.noMargin {
+  margin-top: 0;
+}
+
+.dangerButton {
+  margin-top: 14px;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #111;
+  background: #ff6b6b;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.backupActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.backupHint {
+  margin-bottom: 0;
 }
 
 .taskRow {
